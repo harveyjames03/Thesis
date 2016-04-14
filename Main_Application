@@ -1,0 +1,463 @@
+Imports System.IO.Ports
+Public Class MainApplication
+    Public waiting As New Queue(Of Reservation)
+
+    Private Sub SplitContainer1_Panel1_Paint(sender As Object, e As PaintEventArgs) Handles SplitContainer1.Panel1.Paint
+
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New HomeControl)
+    End Sub
+
+
+    Dim pin13 As Integer
+    Dim pin12 As Integer
+    Dim pin11 As Integer
+    Dim pin10 As Integer
+    Dim pin9 As Integer
+    Dim pin8 As Integer
+    Dim pin7 As Integer
+    Dim pin6 As Integer
+
+    Dim pin5 As Integer
+    Dim pin4 As Integer
+    Dim pin3 As Integer
+    Dim pin2 As Integer
+    Dim pin1 As Integer
+    Private Sub MainApplication_Load(sender As Object, e As EventArgs) Handles Me.Load
+
+        pin13 = 0
+        pin12 = 0
+        pin11 = 0
+        pin10 = 0
+
+        pin9 = 0
+        pin8 = 0
+        pin7 = 0
+        pin6 = 0
+
+        pin5 = 0
+        pin4 = 0
+        pin3 = 0
+        pin2 = 0
+        pin1 = 0
+
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New HomeControl)
+
+        loadQueue()
+        loadTopClients()
+    End Sub
+
+    Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
+        Me.Close()
+        Form1.Show()
+
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New MembersControl)
+    End Sub
+
+    Public Sub addQueue(reservation As Reservation)
+        On Error Resume Next
+        waiting.Enqueue(reservation)
+        Dim user = con.read("users", "id='" & reservation.memberId & "'")
+
+        For i As Integer = 0 To user.Count - 1
+            lstWaiting.Items.Add(user(0)(1).ToString() & " " & user(0)(3).ToString())
+        Next
+
+    End Sub
+    Private Sub loadTopClients()
+        '  On Error Resume Next
+        Dim top = con.read("points,users", "points.user_id=users.id ORDER BY points DESC LIMIT 10")
+        For Each t In top
+            With lvTopClients.Items.Add(t(5).ToString & " " & t(7).ToString)
+                .SubItems.Add(t(2).ToString)
+            End With
+        Next
+    End Sub
+
+    Function getQueue()
+        On Error Resume Next
+        lstWaiting.Items.RemoveAt(0)
+        Return waiting.Dequeue()
+    End Function
+
+    Private Sub loadQueue()
+        '  On Error Resume Next
+
+        ' Dim existing = con.read("reservation", "status=2 AND court_no=7") PUT THIS BACK IF SOMETHING GOES WRONG
+        Dim existing = con.read("reservation", "status=2")
+        If existing.Count > 0 Then
+            For Each q In existing
+                Dim reservation As New Reservation
+
+                ' MsgBox(q(0)(1).ToString())
+
+                Dim user = con.read("users", "id='" & q(0)(1).ToString() & "'")
+
+                'reservation.name = user(0)(1) & " " & user(0)(3)
+                'reservation.memberId = existing(0)(1)
+                'reservation.startTime = DateTime.Parse(existing(0)(3))
+                'reservation.endTime = DateTime.Parse(existing(0)(4))
+                'reservation.employeeId = existing(0)(7)
+                'reservation.hours = existing(0)(8)
+                'reservation.dateReserved = Date.Parse(existing(0)(2))
+                'reservation.courtNumber = existing(0)(6)
+                'reservation.id = existing(0)(0)
+                'waiting.Enqueue(reservation)
+
+                'lstWaiting.Items.Add(user(0)(1).ToString & " " & user(0)(3))
+            Next
+        End If
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New ReservationControl)
+    End Sub
+
+    Private Sub Button8_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnEmployee.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New EmployeeControl)
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New TransactionControl)
+    End Sub
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New SalesUserControl)
+    End Sub
+
+    Private Sub SplitContainer2_Panel1_Paint(sender As Object, e As PaintEventArgs) Handles SplitContainer2.Panel1.Paint
+
+    End Sub
+
+    Private Sub PictureBox1_Click(sender As Object, e As EventArgs) Handles PictureBox1.Click
+
+    End Sub
+    Private Sub refreshTopClients()
+        On Error Resume Next
+        lvTopClients.Items.Clear()
+        Dim members = con.read("users,points", "users.id = points.user_id AND users.type=1 AND users.status=1 ORDER BY points.points DESC")
+        For Each member As List(Of Object) In members
+            With lvTopClients.Items.Add(member(1) & member(3))
+                .SubItems.Add(member(13))
+            End With
+        Next
+    End Sub
+    Private Sub Button8_Click_1(sender As Object, e As EventArgs) Handles Button8.Click
+        If MsgBox("Are you sure to logout?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Form1.Show()
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub PictureBox13_Click(ByVal sender As Object, ByVal e As EventArgs)
+        If MsgBox("Are you sure about this?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Form1.Show()
+            Me.Hide()
+        End If
+    End Sub
+  
+
+    Private Sub PictureBox3_Click(ByVal sender As Object, ByVal e As EventArgs)
+
+
+
+    End Sub
+
+    Private Sub PictureBox4_Click(sender As Object, e As EventArgs) Handles PictureBox4.Click
+        On Error Resume Next
+        sendData("COM18", 5, "I", "J")
+    End Sub
+
+    Private Sub PictureBox6_Click(ByVal sender As Object, ByVal e As EventArgs)
+
+    End Sub
+
+    Private Sub PictureBox5_Click(sender As Object, e As EventArgs) Handles PictureBox5.Click
+         On Error Resume Next
+        sendData("COM18", 4, "G", "H")
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New BracketControl)
+    End Sub
+
+    Private Sub PictureBox14_Click(sender As Object, e As EventArgs) Handles PictureBox14.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New HomeControl)
+    End Sub
+
+    Private Sub PictureBox15_Click(sender As Object, e As EventArgs) Handles PictureBox15.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New ReservationControl)
+    End Sub
+
+    Private Sub PictureBox16_Click(sender As Object, e As EventArgs) Handles PictureBox16.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New BracketingControl)
+    End Sub
+
+    Private Sub PictureBox17_Click(sender As Object, e As EventArgs) Handles PictureBox17.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New MembersControl)
+    End Sub
+
+    Private Sub PictureBox21_Click(ByVal sender As Object, ByVal e As EventArgs)
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New TransactionControl)
+    End Sub
+
+    Private Sub PictureBox20_Click(sender As Object, e As EventArgs) Handles PictureBox20.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New SalesUserControl)
+    End Sub
+
+    Private Sub PictureBox18_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub PictureBox19_Click(sender As Object, e As EventArgs) Handles PictureBox19.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New EmployeeControl)
+    End Sub
+
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
+      
+    End Sub
+    Sub sendData(ByVal port As String, ByVal pin As Integer, ByVal onValue As String, ByVal offValue As String)
+        Try
+            Using com As IO.Ports.SerialPort = My.Computer.Ports.OpenSerialPort(port)
+                If com.IsOpen Then
+
+                    If pin = 13 Then
+                        If pin13 = 0 Then
+                            com.Write(onValue)
+                            pin13 = 1
+                        Else
+                            com.Write(offValue)
+                            pin13 = 0
+                        End If
+                    ElseIf pin = 12 Then
+                        If pin12 = 0 Then
+                            com.Write(onValue)
+                            pin12 = 1
+                        Else
+                            com.Write(offValue)
+                            pin12 = 0
+                        End If
+                    ElseIf pin = 11 Then
+                        If pin11 = 0 Then
+                            com.Write(onValue)
+                            pin11 = 1
+                        Else
+                            com.Write(offValue)
+                            pin11 = 0
+                        End If
+                    ElseIf pin = 10 Then
+                        If pin10 = 0 Then
+                            com.Write(onValue)
+                            pin10 = 1
+                        Else
+                            com.Write(offValue)
+                            pin10 = 0
+                        End If
+                    ElseIf pin = 9 Then
+                        If pin9 = 0 Then
+                            com.Write(onValue)
+                            pin9 = 1
+                        Else
+                            com.Write(offValue)
+                            pin9 = 0
+                        End If
+                    ElseIf pin = 8 Then
+                        If pin8 = 0 Then
+                            com.Write(onValue)
+                            pin8 = 1
+                        Else
+                            com.Write(offValue)
+                            pin8 = 0
+                        End If
+                    ElseIf pin = 7 Then
+                        If pin7 = 0 Then
+                            com.Write(onValue)
+                            pin7 = 1
+                        Else
+                            com.Write(offValue)
+                            pin7 = 0
+                        End If
+                    ElseIf pin = 6 Then
+                        If pin6 = 0 Then
+                            com.Write(onValue)
+                            pin6 = 1
+                        Else
+                            com.Write(offValue)
+                            pin6 = 0
+                        End If
+                    ElseIf pin = 5 Then
+                        If pin5 = 0 Then
+                            com.Write(onValue)
+                            pin5 = 1
+                        Else
+                            com.Write(offValue)
+                            pin5 = 0
+                        End If
+                    ElseIf pin = 4 Then
+                        If pin4 = 0 Then
+                            com.Write(onValue)
+                            pin4 = 1
+                        Else
+                            com.Write(offValue)
+                            pin4 = 0
+                        End If
+                    ElseIf pin = 3 Then
+                        If pin3 = 0 Then
+                            com.Write(onValue)
+                            pin3 = 1
+                        Else
+                            com.Write(offValue)
+                            pin3 = 0
+                        End If
+                    ElseIf pin = 2 Then
+                        If pin2 = 0 Then
+                            com.Write(onValue)
+                            pin2 = 1
+                        Else
+                            com.Write(offValue)
+                            pin2 = 0
+                        End If
+                    ElseIf pin = 1 Then
+                        If pin1 = 0 Then
+                            com.Write(onValue)
+                            pin1 = 1
+                        Else
+                            com.Write(offValue)
+                            pin1 = 0
+                        End If
+                    End If
+                End If
+            End Using
+
+
+        Catch ex As Exception
+            MsgBox("Port not found, please connect your device.")
+        End Try
+    End Sub
+    Dim comPort As String = "COM18"
+    Private Sub PictureBox7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox7.Click
+        On Error Resume Next
+        sendData(comPort, 1, "A", "B")
+    End Sub
+
+    Private Sub PictureBox9_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox9.Click
+        On Error Resume Next
+        sendData(comPort, 2, "C", "D")
+    End Sub
+
+    Private Sub PictureBox11_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox11.Click
+          On Error Resume Next
+        sendData(comPort, 3, "E", "F")
+    End Sub
+
+ 
+
+    Private Sub PictureBox3_Click_1(sender As Object, e As EventArgs) Handles PictureBox3.Click
+        If MsgBox("Are you sure to logout?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Form1.txtUsername.Focus()
+            Form1.Show()
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub PictureBox13_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox13.Click
+        On Error Resume Next
+        sendData(comPort, 6, "K", "L")
+    End Sub
+
+    Private Sub PictureBox12_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        On Error Resume Next
+        sendData(comPort, 2, "M", "N")
+    End Sub
+
+    Private Sub PictureBox10_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        On Error Resume Next
+        sendData(comPort, 2, "O", "P")
+    End Sub
+
+    
+
+    Private Sub PictureBox8_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        On Error Resume Next
+        sendData(comPort, 2, "S", "T")
+    End Sub
+
+    Private Sub PictureBox2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        If MsgBox("Are you sure to logout?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Form1.Show()
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub PictureBox21_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox21.Click
+        On Error Resume Next
+        sendData(comPort, 7, "M", "N")
+    End Sub
+
+    Private Sub PictureBox18_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox18.Click
+        On Error Resume Next
+        sendData(comPort, 8, "O", "P")
+    End Sub
+
+    Private Sub PictureBox12_Click_2(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox12.Click
+        On Error Resume Next
+        sendData(comPort, 9, "Q", "R")
+    End Sub
+
+    Private Sub PictureBox8_Click_2(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox8.Click
+        On Error Resume Next
+        sendData(comPort, 10, "S", "T")
+    End Sub
+
+    Private Sub PictureBox10_Click_2(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox10.Click
+        On Error Resume Next
+        sendData(comPort, 11, "U", "V")
+    End Sub
+
+    Private Sub PictureBox6_Click_2(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox6.Click
+        On Error Resume Next
+        sendData(comPort, 12, "W", "X")
+    End Sub
+
+    Private Sub PictureBox22_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox22.Click
+        SplitContainer2.Panel1.Controls.Clear()
+        SplitContainer2.Panel1.Controls.Add(New TransactionControl)
+    End Sub
+
+    Private Sub PictureBox2_Click_1(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox2.Click
+        Me.WindowState = FormWindowState.Minimized
+    End Sub
+
+    Private Sub PictureBox23_Click(sender As Object, e As EventArgs) Handles PictureBox23.Click
+        On Error Resume Next
+        sendData(comPort, 13, "Y", "Z")
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs)
+        Button1.PerformClick()
+    End Sub
+
+    Private Sub Button10_Click(sender As Object, e As EventArgs) Handles Button10.Click
+        refreshTopClients()
+    End Sub
+End Class
