@@ -1,0 +1,139 @@
+Public Class MembersControl
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        On Error Resume Next
+        AddNewMemberForm.ShowDialog()
+
+    End Sub
+    
+    Private Sub MembersControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        On Error Resume Next
+        LoadMembers()
+
+    End Sub
+    Public Sub LoadAllMembers()
+        On Error Resume Next
+        ListView1.Items.Clear()
+        Dim members = con.read("users,points", "users.id = points.user_id AND users.type=1 ORDER BY points.points DESC")
+        For Each member As List(Of Object) In members
+            With ListView1.Items.Add(member(0))
+                .SubItems.Add(member(1))
+                .SubItems.Add(member(3))
+                .SubItems.Add(member(6))
+                .SubItems.Add(member(13))
+            End With
+        Next
+        Button5.Enabled = False
+
+    End Sub
+
+    Public Sub LoadMembers()
+        On Error Resume Next
+        ListView1.Items.Clear()
+        Dim members = con.read("users,points", "users.id = points.user_id AND users.type=1 AND users.status=1 ORDER BY points.points DESC")
+        For Each member As List(Of Object) In members
+            With ListView1.Items.Add(member(0))
+                .SubItems.Add(member(1))
+                .SubItems.Add(member(3))
+                .SubItems.Add(member(6))
+                .SubItems.Add(member(13))
+            End With
+        Next
+        Button5.Enabled = False
+
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs)
+        On Error Resume Next
+        If MsgBox("Are you sure to delete? This action is irreversible.", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Dim selectedMember = ListView1.SelectedItems(0).SubItems(0).Text
+            con.update("users", "status=2", "id='" & selectedMember & "'")
+            MsgBox("Member has been deleted")
+            LoadMembers()
+
+        End If
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        ' RankingForm.ShowDialog()
+        LoadMembers()
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+
+        Dim points = NumericUpDown1.Value + Val(ListView1.SelectedItems(0).SubItems(4).Text)
+        Dim id = ListView1.SelectedItems(0).SubItems(0).Text
+
+        con.update("points", "points=" & points, "user_id=" & id)
+        Panel1.Visible = False
+        LoadMembers()
+    End Sub
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
+        Panel1.Visible = False
+        NumericUpDown1.Value = 0
+
+    End Sub
+    Dim selectedId As Integer
+    Private Sub selectItem()
+        On Error Resume Next
+
+        Dim index As Integer = ListView1.SelectedIndices(0)
+
+        selectedId = ListView1.Items(index).SubItems(0).Text
+
+        Dim d = con.read("users", " id='" & ListView1.Items(index).SubItems(0).Text & "' ")
+
+        txtFname.Text = d(0)(1)
+        txtMname.Text = d(0)(2)
+        txtLname.Text = d(0)(3)
+        cmbGender.Text = d(0)(5)
+        txtAge.Text = d(0)(4)
+        txtAddress.Text = d(0)(6)
+        txtEmail.Text = d(0)(8)
+        txtContact.Text = d(0)(7)
+
+    End Sub
+
+    Private Sub ListView1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListView1.SelectedIndexChanged
+        On Error Resume Next
+        Button5.Enabled = True
+        Panel1.Visible = True
+        selectItem()
+    End Sub
+    Private Sub updateMember()
+        On Error Resume Next
+
+        If txtFname.Text = "" Or txtMname.Text = "" Or txtLname.Text = "" Or txtAge.Text = "" Or cmbGender.Text = "" Or txtAddress.Text = "" Or txtContact.Text = "" Or txtEmail.Text = "" Or cmbRankingStatus.Text = "" Then
+            MsgBox("Please fill up all the forms.")
+        Else
+            Dim status As Integer = cmbRankingStatus.SelectedIndex + 1
+            con.update("users", " fname='" & txtFname.Text & "',mi='" & txtMname.Text & "',lname='" & txtLname.Text & "',age='" & txtAge.Text & "',gender='" & cmbGender.Text & "',address='" & txtAddress.Text & "',contact_no='" & txtContact.Text & "',email='" & txtEmail.Text & "',type=1,status='" & status & "'", "id='" & selectedId & "'")
+        End If
+      End Sub
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        On Error Resume Next
+        If MsgBox("Are you sure you want to update?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            updateMember()
+            LoadMembers()
+        End If
+    End Sub
+
+    Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
+        On Error Resume Next
+        LoadMembers()
+
+
+    End Sub
+
+    Private Sub Button2_Click_1(sender As Object, e As EventArgs) Handles Button2.Click
+        On Error Resume Next
+        LoadAllMembers()
+    End Sub
+
+    Private Sub Button9_Click(sender As Object, e As EventArgs) Handles Button9.Click
+        If MsgBox("Are you sure you want to exit?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Panel1.Hide()
+        End If
+    End Sub
+End Class
