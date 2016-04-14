@@ -1,0 +1,92 @@
+Public Class HomeControl
+
+    Dim courtList As New List(Of Court)
+
+    Private Sub HomeControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim courts As Panel() = {court1, court2, court3, court4, court5, court6}
+        For i As Integer = 0 To courts.Count - 1
+            Dim court As New Court(i + 1)
+            court.GetReservation()
+
+            courts(i).Controls.Add(court)
+            courtList.Add(court)
+        Next
+    End Sub
+    Public Function getWaitingIfExist()
+        Dim parent As MainApplication = Me.ParentForm
+
+        If parent.waiting.Count > 0 Then
+            Dim reservation = parent.getQueue
+            Return reservation
+        Else
+            Return Nothing
+        End If
+    End Function
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs)
+        Dim form As New NewClientForm
+        form.courtNumber = 0
+        form.courts = courtList
+
+        form.ShowDialog()
+
+        If form.success = True Then
+            Dim courtNumber As Integer = form.courtNumber
+            If courtNumber < 7 Then
+                courtList(courtNumber - 1).reservation = form.reservation
+                courtList(courtNumber - 1).startTime()
+            Else
+                Dim parent As MainApplication = Me.ParentForm
+                parent.addQueue(form.reservation)
+                MsgBox("Client was added to queue")
+            End If
+
+        End If
+        form.Dispose()
+    End Sub
+
+    Private Sub PictureBox1_Click(ByVal sender As Object, ByVal e As EventArgs)
+        Dim form As New NewClientForm
+        form.courtNumber = 0
+        form.courts = courtList
+
+        form.ShowDialog()
+
+        If form.success = True Then
+            Dim courtNumber As Integer = form.courtNumber
+            If courtNumber < 7 Then
+                courtList(courtNumber - 1).reservation = form.reservation
+                courtList(courtNumber - 1).startTime()
+            Else
+                Dim parent As MainApplication = Me.ParentForm
+                parent.addQueue(form.reservation)
+                MsgBox("Client was added to queue")
+            End If
+
+        End If
+        form.Dispose()
+    End Sub
+
+    Private Sub PictureBox2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox2.Click
+        Dim form As New NewClientForm
+        form.courtNumber = 0
+        form.courts = courtList
+
+        form.ShowDialog()
+
+        If form.success = True Then
+            Dim courtNumber As Integer = form.courtNumber
+            If courtNumber < 7 Then
+                courtList(courtNumber - 1).reservation = form.reservation
+                courtList(courtNumber - 1).startTime()
+            Else
+                Dim parent As MainApplication = Me.ParentForm
+                parent.addQueue(form.reservation)
+                MsgBox("Client was added to queue")
+            End If
+
+        End If
+        form.Dispose()
+    End Sub
+End Class
+
