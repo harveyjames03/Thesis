@@ -1,0 +1,432 @@
+Public Class ReservationControl
+
+    Dim members As New List(Of List(Of Object))
+    Dim rate = 0.0
+    Public success = False
+    Public courtNumber As Integer = 0
+    Public reservation As New Reservation
+    Public courts As New List(Of Court)
+
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        If ComboBox1.SelectedIndex = 0 Then
+            txtFname.Enabled = False
+            txtMname.Enabled = False
+            txtLname.Enabled = False
+            ListView2.Enabled = True
+            txtFname.Clear()
+            txtMname.Clear()
+            txtLname.Clear()
+        Else
+            ListView2.Enabled = False
+            txtFname.Clear()
+            txtMname.Clear()
+            txtLname.Clear()
+            txtFname.Enabled = True
+            txtMname.Enabled = True
+            txtLname.Enabled = True
+        End If
+    End Sub
+
+    Private Sub ListView2_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListView2.SelectedIndexChanged
+        If ListView2.SelectedIndices.Count > 0 Then
+            Dim member = members(ListView2.SelectedIndices(0))
+            txtFname.Text = member(1)
+            txtLname.Text = member(3)
+            txtMname.Text = member(2)
+            txtContactNumber.Text = member(7)
+            cmbGender.SelectedItem = member(5)
+        End If
+    End Sub
+
+    Private Sub ReservationControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        On Error Resume Next
+
+        ComboBox1.SelectedIndex = 0
+        LoadMembers()
+
+        For i As Integer = 0 To 23
+            cmbHour.Items.Add(Format(i, "00"))
+        Next
+
+        For i As Integer = 0 To 59
+            cmbMinute.Items.Add(Format(i, "00"))
+        Next
+
+        LoadMembers()
+        loadReservations()
+        reservationTimer.Start()
+    End Sub
+
+    Private Sub LoadMembers()
+        ListView2.Items.Clear()
+        members = con.read("users", "type=1 AND status=1")
+        For Each member As List(Of Object) In members
+            With ListView2.Items.Add(member(0))
+                .SubItems.Add(member(1))
+                .SubItems.Add(member(3))
+                .SubItems.Add(member(6))
+                .SubItems.Add(member(7))
+            End With
+        Next
+    End Sub
+
+    Private Sub txtHour_ValueChanged(sender As Object, e As EventArgs) Handles txtHour.ValueChanged
+
+        lblEnd.Text = (Val(cmbHour.SelectedItem) + txtHour.Value) & ":" & cmbMinute.SelectedItem
+
+    End Sub
+    Dim reservationStatus As Integer
+    Public Sub loadReservations()
+        ListView1.Items.Clear()
+        Dim reservations = con.read("reservation,users", " reservation.user_id=users.id")
+        For Each reservation As List(Of Object) In reservations
+            With ListView1.Items.Add(reservation(1))
+                .SubItems.Add(reservation(2))
+                .SubItems.Add(reservation(3))
+                .SubItems.Add(reservation(4))
+                .SubItems.Add(reservation(10))
+                .SubItems.Add(reservation(11))
+                .SubItems.Add(reservation(12))
+                .SubItems.Add(reservation(14))
+                .SubItems.Add(reservation(6))
+                .SubItems.Add(reservation(8))
+                .SubItems.Add(reservation(16))
+                .SubItems.Add(reservation(5))
+            End With
+        Next
+    End Sub
+    Dim reservationId As Integer
+    Private Sub reserve()
+        Try
+            If courtNumber = 0 Then
+                MsgBox("Please select a court from the list")
+                Exit Sub
+
+            End If
+            If ComboBox1.SelectedIndex = 1 Then
+                Dim id = con.insert("users", "'','" & txtFname.Text & "','" & txtMname.Text & "','" & txtLname.Text & "','','" & cmbGender.Text & "','','','','nonmember','1'")
+
+                reservationId = id
+                reservationStatus = Convert.ToInt32(cmbStatus.SelectedIndex.ToString()) + 1
+
+                reservation.name = txtFname.Text & " " & txtLname.Text
+                reservation.memberId = reservationId
+                reservation.startTime = DateTime.Parse(cmbHour.SelectedItem & ":" & cmbMinute.SelectedItem)
+                reservation.endTime = DateTime.Parse((Val(cmbHour.SelectedItem) + txtHour.Value) & ":" & cmbMinute.SelectedItem)
+                reservation.employeeId = currentUser(0)
+                reservation.hours = txtHour.Value
+                reservation.dateReserved = DateTimePicker1.Value
+                reservation.courtNumber = courtNumber
+                reservation.status = reservationStatus
+                reservation.saveToDatabase()
+
+
+                'con.insert("transaction", "'','" & id & "','" & currentUser(0) & "','" & lblTotal.Text & "','1'")
+                MsgBox("Succeessfully reserved")
+                loadReservations()
+            Else
+                Dim id = members(ListView2.SelectedIndices(0))
+                'THIS PART IS FOR MEMBERS RESERVATION
+                reservationId = id(0)
+                reservationStatus = Convert.ToInt32(cmbStatus.SelectedIndex.ToString()) + 1
+
+                '  con.insert("transaction", "'','" & id & "','" & currentUser(0) & "','" & lblTotal.Text & "','1'")
+                reservation.name = txtFname.Text & " " & txtLname.Text
+                reservation.memberId = reservationId
+                reservation.startTime = DateTime.Parse(cmbHour.SelectedItem & ":" & cmbMinute.SelectedItem)
+                reservation.endTime = DateTime.Parse((Val(cmbHour.SelectedItem) + txtHour.Value) & ":" & cmbMinute.SelectedItem)
+                reservation.employeeId = currentUser(0)
+                reservation.hours = txtHour.Value
+                reservation.dateReserved = DateTimePicker1.Value
+                reservation.courtNumber = courtNumber
+                reservation.status = reservationStatus
+                reservation.saveToDatabase()
+
+                MsgBox("Reservation successful.")
+                loadReservations()
+            End If
+        Catch ex As Exception
+            MsgBox("Complete all the forms please.")
+        End Try
+    End Sub
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        On Error Resume Next
+        If cmbStatus.Text = "" Then
+            MsgBox("Please select the status of the reservation.")
+        Else
+            btnReservationDelete.Enabled = False
+            btnReservationUpdate.Enabled = False
+            reserve()
+        End If
+
+    End Sub
+
+    Private Sub cmbCourt_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbCourt.SelectedIndexChanged
+        courtNumber = Val(cmbCourt.SelectedItem)
+    End Sub
+
+    Private Sub Panel1_Paint(sender As Object, e As PaintEventArgs) Handles Panel1.Paint
+
+    End Sub
+
+    Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles txtSearchReservation.TextChanged
+
+    End Sub
+    Private Sub cancelReservation()
+        Try
+            MsgBox("Cancelling reservation successful.")
+        Catch ex As Exception
+            MsgBox("Cancelling reservation failed.")
+        End Try
+    End Sub
+    Private Sub Button4_Click(sender As Object, e As EventArgs)
+        If MsgBox("Are you sure you want to cancel this reservation?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            On Error Resume Next
+            cancelReservation()
+        End If
+    End Sub
+    Private Sub deleteReservation()
+        Try
+            reservation.deleteReservation(reservationId)
+            MsgBox("Deleting reservation successful.")
+        Catch ex As Exception
+            MsgBox("Deleting reservation failed.")
+        End Try
+    End Sub
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles btnReservationDelete.Click
+        If MsgBox("Are you sure you want to delete this reservation?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            On Error Resume Next
+            deleteReservation()
+            loadReservations()
+            btnReservationDelete.Enabled = False
+            btnReservationUpdate.Enabled = False
+            Button1.Enabled = True
+        End If
+    End Sub
+
+    Private Sub selectItem()
+        'Try
+        Dim index = ListView1.SelectedIndices(0)
+
+
+        reservationId = Convert.ToInt32(ListView1.Items(index).SubItems(0).Text)
+
+        txtFname.Text = ListView1.Items(index).SubItems(4).Text
+        txtMname.Text = ListView1.Items(index).SubItems(5).Text
+        txtLname.Text = ListView1.Items(index).SubItems(6).Text
+        cmbGender.Text = ListView1.Items(index).SubItems(7).Text
+        txtContactNumber.Text = ListView1.Items(index).SubItems(10).Text
+        cmbCourt.Text = ListView1.Items(index).SubItems(8).Text
+        cmbHour.Text = ListView1.Items(index).SubItems(9).Text
+        DateTimePicker1.Text = ListView1.Items(index).SubItems(1).Text
+
+        If ListView1.Items(index).SubItems(11).Text = 1 Then
+            reservation.status = 1
+            reservationStatus = 1
+            cmbStatus.Text = "Active"
+        ElseIf ListView1.Items(index).SubItems(1).Text = 2 Then
+            reservation.status = 2
+            reservationStatus = 2
+            cmbStatus.Text = "Attended"
+        ElseIf ListView1.Items(index).SubItems(11).Text = 3 Then
+            reservation.status = 3
+            reservationStatus = 3
+            cmbStatus.Text = "Cancelled"
+        ElseIf ListView1.Items(index).SubItems(11).Text = 4 Then
+            reservation.status = 4
+            reservationStatus = 4
+            cmbStatus.Text = "Not attended on time"
+        End If
+
+        Dim startTime = ListView1.Items(index).SubItems(2).Text.Split(":")
+
+        cmbHour.Text = startTime(0).ToString
+        cmbMinute.Text = startTime(1).ToString
+        'Catch ex As Exception
+        '    MsgBox("Please select an item.")
+        'End Try
+    End Sub
+    Private Sub ListView1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListView1.SelectedIndexChanged
+        On Error Resume Next
+        btnReservationDelete.Enabled = True
+        btnReservationUpdate.Enabled = True
+        Button1.Enabled = False
+        selectItem()
+    End Sub
+    Private Sub reservationUpdate()
+        Try
+            reservation.name = txtFname.Text & " " & txtLname.Text
+            reservation.memberId = reservationId
+            reservation.startTime = DateTime.Parse(cmbHour.SelectedItem & ":" & cmbMinute.SelectedItem)
+            reservation.endTime = DateTime.Parse((Val(cmbHour.SelectedItem) + txtHour.Value) & ":" & cmbMinute.SelectedItem)
+            reservation.employeeId = currentUser(0)
+            reservation.hours = txtHour.Value
+            reservation.dateReserved = DateTimePicker1.Value
+            reservation.courtNumber = courtNumber
+            reservation.status = reservationStatus
+            If reservation.updateReservation() Then
+                MsgBox("Reservation Updated.")
+
+                btnReservationDelete.Enabled = False
+                btnReservationUpdate.Enabled = False
+                Button1.Enabled = True
+                loadReservations()
+            End If
+        Catch ex As Exception
+            MsgBox("Reservation update failed,please try again.")
+        End Try
+    End Sub
+    Private Sub btnReservationUpdate_Click(sender As Object, e As EventArgs) Handles btnReservationUpdate.Click
+        If MsgBox("Are you sure you want to update?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            On Error Resume Next
+            reservationUpdate()
+            clearAll()
+        End If
+
+    End Sub
+
+    Private Sub cmbStatus_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbStatus.SelectedIndexChanged
+        reservationStatus = cmbStatus.SelectedIndex + 1
+        reservation.status = cmbStatus.SelectedIndex + 1
+    End Sub
+    Private Sub clearAll()
+        txtFname.Clear()
+        txtMname.Clear()
+        txtLname.Clear()
+        cmbGender.Text = ""
+        txtContactNumber.Clear()
+        cmbCourt.Text = ""
+
+        cmbStatus.Text = ""
+        cmbHour.Text = ""
+        cmbMinute.Text = ""
+
+
+    End Sub
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        clearAll()
+    End Sub
+    Private Sub searchReservation()
+        Try
+            Dim reservations = con.read("reservation,users ", " users.id=reservation.user_id AND fname LIKE('%" & txtSearchReservation.Text & "%') ")
+            ListView1.Items.Clear()
+            For Each reservation As List(Of Object) In reservations
+                With ListView1.Items.Add(reservation(1))
+                    .SubItems.Add(reservation(2))
+                    .SubItems.Add(reservation(3))
+                    .SubItems.Add(reservation(4))
+                    .SubItems.Add(reservation(10))
+                    .SubItems.Add(reservation(11))
+                    .SubItems.Add(reservation(12))
+                    .SubItems.Add(reservation(14))
+                    .SubItems.Add(reservation(6))
+                    .SubItems.Add(reservation(8))
+                    .SubItems.Add(reservation(16))
+                    .SubItems.Add(reservation(5))
+                End With
+            Next
+        Catch ex As Exception
+            MsgBox("Reservation Not Found")
+        End Try
+    End Sub
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        On Error Resume Next
+        searchReservation()
+
+    End Sub
+
+    Private Sub Button4_Click_1(sender As Object, e As EventArgs) Handles Button4.Click
+        On Error Resume Next
+        loadReservations()
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles reservationTimer.Tick
+        On Error Resume Next
+        Dim timeNow = DateTime.Now
+
+        For i As Integer = 0 To ListView1.Items.Count - 1
+         
+            Dim ar = ListView1.Items(i).SubItems(2).Text.Split(":")
+
+            Dim reservationMinute = ar(1)
+            Dim reservationHour = ar(0)
+
+            Dim now = reservation.getMilitaryTime(timeNow).ToString().Split(":")
+
+            Dim hourNow = now(0)
+            Dim minuteNow = now(1)
+
+            Dim alarm = Convert.ToInt32(reservationMinute) - Convert.ToInt32(minuteNow) '5 minutes
+
+            If reservationHour = hourNow And alarm = -15 Then
+                txtFname.Text = ListView1.Items(i).SubItems(4).Text
+                txtMname.Text = ListView1.Items(i).SubItems(5).Text
+                txtLname.Text = ListView1.Items(i).SubItems(6).Text
+                cmbGender.Text = ListView1.Items(i).SubItems(7).Text
+                txtContactNumber.Text = ListView1.Items(i).SubItems(10).Text
+                cmbCourt.Text = ListView1.Items(i).SubItems(8).Text
+                cmbHour.Text = ListView1.Items(i).SubItems(9).Text
+                DateTimePicker1.Text = ListView1.Items(i).SubItems(1).Text
+
+                lblWarning.Text = "Reservation of" & txtFname.Text & " " & txtMname.Text & " " & txtLname.Text & " is 15 minutes over."            
+
+                If ListView1.Items(i).SubItems(11).Text = 1 Then
+                    reservation.status = 1
+                    reservationStatus = 1
+                    cmbStatus.Text = "Active"
+                ElseIf ListView1.Items(i).SubItems(1).Text = 2 Then
+                    reservation.status = 2
+                    reservationStatus = 2
+                    cmbStatus.Text = "Attended"
+                ElseIf ListView1.Items(i).SubItems(11).Text = 3 Then
+                    reservation.status = 3
+                    reservationStatus = 3
+                    cmbStatus.Text = "Cancelled"
+                ElseIf ListView1.Items(i).SubItems(11).Text = 4 Then
+                    reservation.status = 4
+                    reservationStatus = 4
+                    cmbStatus.Text = "Not attended on time"
+                End If
+
+                Dim startTime = ListView1.Items(i).SubItems(2).Text.Split(":")
+
+                cmbHour.Text = startTime(0).ToString
+                cmbMinute.Text = startTime(1).ToString
+
+            ElseIf reservationHour = hourNow And alarm = -30 Then
+                txtFname.Text = ListView1.Items(i).SubItems(4).Text
+                txtMname.Text = ListView1.Items(i).SubItems(5).Text
+                txtLname.Text = ListView1.Items(i).SubItems(6).Text
+                lblWarning.Text = "Reservation of" & txtFname.Text & " " & txtMname.Text & " " & txtLname.Text & " is 30 minutes over."
+
+                cmbGender.Text = ListView1.Items(i).SubItems(7).Text
+                txtContactNumber.Text = ListView1.Items(i).SubItems(10).Text
+                cmbCourt.Text = ListView1.Items(i).SubItems(8).Text
+                cmbHour.Text = ListView1.Items(i).SubItems(9).Text
+                DateTimePicker1.Text = ListView1.Items(i).SubItems(1).Text
+
+                reservation.status = 3
+                reservationStatus = 3
+                cmbStatus.Text = "Cancelled"
+
+                reservation.name = txtFname.Text & " " & txtLname.Text
+                reservation.memberId = reservationId
+                reservation.startTime = DateTime.Parse(cmbHour.SelectedItem & ":" & cmbMinute.SelectedItem)
+                reservation.endTime = DateTime.Parse((Val(cmbHour.SelectedItem) + txtHour.Value) & ":" & cmbMinute.SelectedItem)
+                reservation.employeeId = currentUser(0)
+                reservation.hours = txtHour.Value
+                reservation.dateReserved = DateTimePicker1.Value
+                reservation.courtNumber = courtNumber
+                reservation.status = reservationStatus
+                reservation.updateReservation()
+                loadReservations()
+
+                Dim startTime = ListView1.Items(i).SubItems(2).Text.Split(":")
+
+                cmbHour.Text = startTime(0).ToString
+                cmbMinute.Text = startTime(1).ToString
+            End If
+        Next
+        
+    End Sub
+End Class
