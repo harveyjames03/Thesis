@@ -1,0 +1,496 @@
+Public Class BracketingControl
+
+    Sub fillList()
+        On Error Resume Next
+        lvMembers.Items.Clear()
+        Dim d = con.read("users", "type='" & 1 & "'")
+        Dim m As Integer = 0
+        For Each item In d
+            With lvMembers.Items.Add(d(m)(0).ToString())
+                .SubItems.Add(d(m)(1).ToString())
+                .SubItems.Add(d(m)(2).ToString())
+                .SubItems.Add(d(m)(3).ToString())
+            End With
+            m = m + 1
+        Next
+        m = 0
+    End Sub
+    Private Sub BracketingControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        fillList()
+
+        'WebBrowser1.Navigate(Application.StartupPath + "/bracket/index.html")
+        'WebBrowser1.DocumentText = "<script type='text/javascript' src='jquery-1.6.2.min.js/></script><script type='text/javascript' src='jquery.bracket.min.js'></script> <link rel='stylesheet' type='text/css' href='jquery.bracket.min.css'/>"
+    End Sub
+    Dim list As List(Of String)
+    Dim membersList As New List(Of List(Of String))
+    Dim index As Integer
+    Dim listOfWinnersSingle As New List(Of String)
+    Public Sub addMembers()
+        On Error Resume Next
+
+        Dim id = lvMembers.Items(index).SubItems(0).Text
+        Dim firstName = lvMembers.Items(index).SubItems(1).Text
+        Dim mi = lvMembers.Items(index).SubItems(2).Text
+        Dim ln = lvMembers.Items(index).SubItems(3).Text
+
+        list = New List(Of String)
+
+        list.Add(id)
+        list.Add(firstName)
+        list.Add(mi)
+        list.Add(ln)
+
+        membersList.Add(list)
+        ' MsgBox("Member is added on the bracketing list.")
+
+    End Sub
+    Private Sub Button1_Click(ByVal sender As Object, ByVal e As EventArgs) Handles Button1.Click
+        Try
+            index = lvMembers.SelectedIndices(0)
+            lvMembers.Items(index).BackColor = Color.DarkOrange
+            addMembers()
+        Catch ex As Exception
+            MsgBox("Please select an item")
+        End Try
+    End Sub
+
+
+    Function numberOfRoundsInSingle(ByVal participants As Integer)
+        Dim res As Integer = 0
+        Try
+            Do While (participants / 2) <> 1
+                res = res + 1
+                participants = participants / 2
+            Loop
+        Catch ex As Exception
+            MsgBox("An error has occured, please try again.")
+        End Try
+        Return res
+    End Function
+
+    Sub singleBracketing()
+        Dim count As Integer = membersList.Count 'Count of members 
+        Dim numberOfGames As Integer = count - 1 'number of games (n-1) where n is the number of members
+
+        Dim index1 As Integer
+
+        Dim firstplayer As String = ""
+        Dim secondplayer As String = ""
+
+        Dim listOfWinners As New List(Of String)
+        Dim game As String
+        '//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        Dim numberOfRounds As Integer = (numberOfRoundsInSingle(count)) + 1
+        Dim n As Integer = 0
+
+        For n = 1 To numberOfRounds Step 1
+            If n = 1 Then
+                ' Displaying the first round
+                If count Mod 2 = 0 Then
+                    For index1 = 1 To count - 1 Step 1 'matches players from index 1
+                        If index1 Mod 2 <> 0 Then
+
+                            firstplayer = membersList(index1 - 1)(1).ToString() & " " & membersList(index1 - 1)(3).ToString()
+                            secondplayer = membersList(index1)(1).ToString() & " " & membersList(index1)(3).ToString()
+                            game = (firstplayer & vbNewLine & "  against  " & vbNewLine & secondplayer)
+
+                            listOfWinners.Add(game & " winnner" & vbNewLine) 'determines the name of the winner in the first round
+
+                            With lvBracketing.Items.Add(game)
+                                .SubItems.Add(n.ToString())
+                            End With
+                        End If
+                    Next
+                Else
+                    count = count + 1
+                    list = New List(Of String)
+                    list.Add("0")
+                    list.Add("Bye")
+                    list.Add("Bye")
+                    list.Add("Player")
+
+                    membersList.Add(list)
+
+                    For index1 = 1 To count - 1 Step 1
+                        If index1 Mod 2 <> 0 Then
+                            firstplayer = membersList(index1 - 1)(1).ToString() & " " & membersList(index1 - 1)(3).ToString()
+                            secondplayer = membersList(index1)(1).ToString() & " " & membersList(index1)(3).ToString()
+                            game = (firstplayer & vbNewLine & "  against  " & vbNewLine & secondplayer & vbNewLine)
+
+                            listOfWinners.Add(game & " winnner" & vbNewLine) 'determines the name of the winner in the first round
+                            With lvBracketing.Items.Add(game)
+                                .SubItems.Add(n.ToString())
+                            End With
+                        End If
+                    Next
+                End If
+            Else 'displaying the next rounds
+                Dim listOfWinner2 As New List(Of String)
+
+                For nn As Integer = 1 To listOfWinners.Count - 1 Step 1
+                    If nn Mod 2 <> 0 Then
+                        firstplayer = listOfWinners(nn - 1).ToString()
+                        secondplayer = listOfWinners(nn).ToString()
+                        game = firstplayer & " vs " & vbNewLine & secondplayer & vbNewLine
+
+                        listOfWinner2.Add(game & " winner" & vbNewLine)
+
+                        With lvBracketing.Items.Add(game)
+                            .SubItems.Add(n.ToString())
+                        End With
+                    End If
+                Next
+
+                listOfWinners.Clear()
+                listOfWinners = listOfWinner2
+
+                listOfWinner2.Clear()
+            End If
+        Next
+
+
+
+    End Sub
+    Private Sub doubleBracketing()
+        Dim count As Integer = membersList.Count 'Count of members  
+        Dim numberOfGames = (count * 2) - 1
+        Dim doubleWinners As New List(Of String)
+        Dim doubleLoosers As New List(Of String)
+
+        Dim firstPlayer As String = ""
+        Dim secondPlayer As String = ""
+        Dim game As String = ""
+
+        ' this is the first round
+        If count Mod 2 = 0 Then ' if count is even
+            For i = 1 To count - 1 Step 1
+                If i Mod 2 <> 0 Then
+                    firstPlayer = membersList(i - 1)(1).ToString() & vbNewLine
+                    secondPlayer = membersList(i)(1).ToString() & vbNewLine
+                    game = firstPlayer & " vs " & secondPlayer
+                    doubleWinners.Add(firstPlayer & " against " & secondPlayer & " winner")
+                    doubleLoosers.Add(firstPlayer & " against " & secondPlayer & " looser")
+
+                    With lvBracketing.Items.Add(game)
+                        .SubItems.Add(i)
+                    End With
+                End If
+            Next
+        Else 'if count is odd add bye player
+            count = count + 1
+            list = New List(Of String)
+            list.Add("0")
+            list.Add("Bye")
+            list.Add("Bye")
+            list.Add("Player")
+
+            membersList.Add(list)
+
+            For i = 1 To count - 1 Step 1
+                If i Mod 2 <> 0 Then
+                    firstPlayer = membersList(i - 1)(1).ToString() & vbNewLine
+                    secondPlayer = membersList(i)(1).ToString() & vbNewLine
+                    game = firstPlayer & " vs " & secondPlayer
+                    doubleWinners.Add(firstPlayer & " against " & secondPlayer & " winner")
+                    doubleLoosers.Add(firstPlayer & " against " & secondPlayer & " looser")
+                    With lvBracketing.Items.Add(game)
+                        .SubItems.Add(i)
+                    End With
+                End If
+            Next
+        End If
+        'end of first round
+
+        Dim doubleLooser2 As New List(Of String)
+        Dim doubleWinner2 As New List(Of String)
+        'winners from the first round are matched, losers in this match are matched into the winners of the losers bracket elimination
+        For ii As Integer = 1 To doubleWinners.Count - 1 Step 1
+            If ii Mod 2 <> 0 Then
+
+                With lvBracketing.Items.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString())
+                    doubleLooser2.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match looser") ' whoever looses in this match gets to match whoever wins in the loosers match
+                    doubleWinner2.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match winner")
+                    .SubItems.Add(ii)
+                End With
+                ' MsgBox("(" & doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match looser)" & vbNewLine & " Will go against" & vbNewLine & " (" & doubleLoosers(ii - 1).ToString() & vbNewLine & " vs " & doubleLoosers(ii).ToString() & " match winner.)")
+            Else
+
+            End If
+        Next
+
+        Dim doubleWinner3 As New List(Of String)
+        'loosers from the second round are matched, whoever loses in this match are eliminated, whoever wins matches the losers of the winners bracket elimination
+        For iii As Integer = 1 To doubleLoosers.Count - 1 Step 1
+            If iii Mod 2 <> 0 Then
+                With lvBracketing.Items.Add(doubleLoosers(iii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleLoosers(iii).ToString())
+                    doubleWinner3.Add(doubleLoosers(iii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleLoosers(iii).ToString() & " match winner")
+                    .SubItems.Add(iii)
+                End With
+            Else
+
+            End If
+        Next
+
+        Dim doubleWinner4 As New List(Of String)
+
+        For j As Integer = 0 To doubleLooser2.Count - 1
+            With lvBracketing.Items.Add("(" & doubleLooser2(j).ToString() & ")" & vbNewLine & " vs " & vbNewLine & "(" & doubleWinner3(j).ToString() & ")")
+                doubleWinner4.Add("((" & doubleLooser2(j).ToString() & ")" & vbNewLine & " vs " & vbNewLine & "(" & doubleWinner3(j).ToString() & ") match winner)")
+                .SubItems.Add(j)
+            End With
+        Next
+
+        Dim lastTwo As New List(Of String)
+        For l As Integer = 0 To doubleWinner2.Count - 1
+            With lvBracketing.Items.Add(doubleWinner2(l).ToString() & " vs " & doubleWinner4(l).ToString())
+                .SubItems.Add(l)
+            End With
+        Next
+
+
+    End Sub
+    Private Sub RoundRobin()
+        Dim count As Integer = membersList.Count 'Count of members  
+        Dim numberOfGames = (count * 2) - 1
+        Dim doubleWinners As New List(Of String)
+        Dim doubleLoosers As New List(Of String)
+
+        Dim firstPlayer As String = ""
+        Dim secondPlayer As String = ""
+        Dim game As String = ""
+
+        ' this is the first round
+        If count Mod 2 = 0 Then ' if count is even
+            For i = 1 To count - 1 Step 1
+                If i Mod 2 <> 0 Then
+                    firstPlayer = membersList(i - 1)(1).ToString() & vbNewLine
+                    secondPlayer = membersList(i)(1).ToString() & vbNewLine
+                    game = firstPlayer & " vs " & secondPlayer
+                    doubleWinners.Add(firstPlayer & " against " & secondPlayer & " winner")
+                    doubleLoosers.Add(firstPlayer & " against " & secondPlayer & " looser")
+
+                    With lvBracketing.Items.Add(game)
+                        .SubItems.Add(i)
+                    End With
+                End If
+            Next
+        Else 'if count is odd add bye player
+            count = count + 1
+            list = New List(Of String)
+            list.Add("0")
+            list.Add("Bye")
+            list.Add("Bye")
+            list.Add("Player")
+
+            membersList.Add(list)
+
+            For i = 1 To count - 1 Step 1
+                If i Mod 2 <> 0 Then
+                    firstPlayer = membersList(i - 1)(1).ToString() & vbNewLine
+                    secondPlayer = membersList(i)(1).ToString() & vbNewLine
+                    game = firstPlayer & " vs " & secondPlayer
+                    doubleWinners.Add(firstPlayer & " against " & secondPlayer & " winner")
+                    doubleLoosers.Add(firstPlayer & " against " & secondPlayer & " looser")
+                    With lvBracketing.Items.Add(game)
+                        .SubItems.Add(i)
+                    End With
+                End If
+            Next
+        End If
+        'end of first round
+
+        Dim doubleLooser2 As New List(Of String)
+        Dim doubleWinner2 As New List(Of String)
+        'winners from the first round are matched, losers in this match are matched into the winners of the losers bracket elimination
+        For ii As Integer = 1 To doubleWinners.Count - 1 Step 1
+            If ii Mod 2 <> 0 Then
+
+                With lvBracketing.Items.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString())
+                    doubleLooser2.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match looser") ' whoever looses in this match gets to match whoever wins in the loosers match
+                    doubleWinner2.Add(doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match winner")
+                    .SubItems.Add(ii)
+                End With
+                ' MsgBox("(" & doubleWinners(ii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleWinners(ii).ToString() & " match looser)" & vbNewLine & " Will go against" & vbNewLine & " (" & doubleLoosers(ii - 1).ToString() & vbNewLine & " vs " & doubleLoosers(ii).ToString() & " match winner.)")
+            Else
+
+            End If
+        Next
+
+        Dim doubleWinner3 As New List(Of String)
+        'loosers from the second round are matched, whoever loses in this match are eliminated, whoever wins matches the losers of the winners bracket elimination
+        For iii As Integer = 1 To doubleLoosers.Count - 1 Step 1
+            If iii Mod 2 <> 0 Then
+                With lvBracketing.Items.Add(doubleLoosers(iii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleLoosers(iii).ToString())
+                    doubleWinner3.Add(doubleLoosers(iii - 1).ToString() & vbNewLine & " vs " & vbNewLine & doubleLoosers(iii).ToString() & " match winner")
+                    .SubItems.Add(iii)
+                End With
+            Else
+
+            End If
+        Next
+
+        Dim doubleWinner4 As New List(Of String)
+
+        For j As Integer = 0 To doubleLooser2.Count - 1
+            With lvBracketing.Items.Add("(" & doubleLooser2(j).ToString() & ")" & vbNewLine & " vs " & vbNewLine & "(" & doubleWinner3(j).ToString() & ")")
+                doubleWinner4.Add("((" & doubleLooser2(j).ToString() & ")" & vbNewLine & " vs " & vbNewLine & "(" & doubleWinner3(j).ToString() & ") match winner)")
+                .SubItems.Add(j)
+            End With
+        Next
+
+        Dim lastTwo As New List(Of String)
+        For l As Integer = 0 To doubleWinner2.Count - 1
+            With lvBracketing.Items.Add(doubleWinner2(l).ToString() & " vs " & doubleWinner4(l).ToString())
+                .SubItems.Add(l)
+            End With
+        Next
+    End Sub
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+
+        lvBracketing.Items.Clear()
+
+        If cmbBracketing.Text = "Single" Then
+            singleBracketing()
+        ElseIf cmbBracketing.Text = "Double" Then
+            doubleBracketing()
+        ElseIf cmbBracketing.Text = "Round Robin" Then
+            RoundRobin()
+        Else
+            MsgBox("Please select the bracketing type.")
+        End If
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Dim PrintPreview As New PrintPreviewDialog
+        PrintPreview.Document = PrintDocument1
+        PrintPreview.ShowDialog()
+    End Sub
+
+    Private Sub PrintDocument1_PrintPage(sender As Object, e As Printing.PrintPageEventArgs) Handles PrintDocument1.PrintPage
+        If lvBracketing.View = View.Details Then
+            PrintDetails(e)
+        End If
+    End Sub
+
+    Private Sub PrintDetails(ByRef e As System.Drawing.Printing.PrintPageEventArgs)
+        Static lastIndex As Integer = 0
+        Static currentPage As Integer = 0
+
+        Dim dpiGraphics As Graphics = Me.CreateGraphics
+
+        Dim xx As Integer = dpiGraphics.DpiX
+        Dim yy As Integer = dpiGraphics.DpiY
+
+        dpiGraphics.Dispose()
+
+        Dim X, Y As Integer
+
+        Dim ImageWidth As Integer
+
+        Dim textRect As Rectangle = Rectangle.Empty
+        Dim textleftpad As Single = CSng(4 * (xx / 96)) '4 pixel pad o the left
+        Dim columnHeaderHeight As Single = CSng(lvBracketing.Font.Height + (10 * (xx / 96))) '5 pixel pad on the top and bottom
+        Dim stringformat As Single = e.Graphics.MeasureString(CStr(currentPage), lvBracketing.Font).Width
+        'specify the text should be drawn in the center of the line and that the text should not be wrapped and the text should show in elipsis would cut off
+        Dim pageNumberWidth As Single = e.Graphics.MeasureString(CStr(currentPage), lvBracketing.Font).Width
+        Dim sf = New StringFormat
+
+        sf.FormatFlags = StringFormatFlags.NoWrap
+        sf.Trimming = StringTrimming.EllipsisCharacter
+        sf.LineAlignment = StringAlignment.Center
+
+        currentPage += 1
+
+        X = CInt(e.MarginBounds.X)
+        Y = CInt(e.MarginBounds.Y)
+
+        For columIndex As Integer = 0 To lvBracketing.Columns.Count - 1
+            textRect.X = X
+            textRect.Y = Y
+            textRect.Width = lvBracketing.Columns(columIndex).Width
+            textRect.Height = columnHeaderHeight
+
+            e.Graphics.FillRectangle(Brushes.LightGray, textRect)
+            e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+
+            textRect.X += textleftpad
+            textRect.Width -= textleftpad
+
+            e.Graphics.DrawString(lvBracketing.Columns(columIndex).Text, lvBracketing.Font, Brushes.Black, textRect, sf)
+            X += textRect.Width + textleftpad
+
+        Next
+        'just drew the headers move the y down the height of the column headers
+        Y += columnHeaderHeight
+
+        'draw the items if this is hte first page then the last index will be zero. if its not then the last index
+        'will be the last index we tried to draw but had no room
+
+        For i = lastIndex To lvBracketing.Items.Count - 1
+            With lvBracketing.Items(i)
+                'start the x at the pages left margin
+                X = CInt(e.MarginBounds.X)
+
+                If Y + .Bounds.Height > e.MarginBounds.Bottom Then
+                    'THIS ITEM WONT FIT SUBTRACT 1 FR=OM i so the next time this sub
+                    'is entered we can start with this item
+                    lastIndex = i - 1
+                    e.HasMorePages = True
+                    sf.Dispose()
+
+                    'Draw the current page number before leaving
+                    e.Graphics.DrawString(CStr(currentPage), lvBracketing.Font, Brushes.Black, (e.PageBounds.Width - pageNumberWidth) / 2, (e.PageBounds.Bottom - (lvBracketing.Font.Height * 2)))
+
+                    Exit Sub
+                    'Y += .Bounds.Height
+                End If
+                'Now draw the subitems. using the columns count so the grid lines can be drawn. If used the subitems count then the table would not be full if some subitems where less than others
+                For columnIndex As Integer = 0 To lvBracketing.Columns.Count - 1
+                    textRect.X = X
+                    textRect.Y = Y
+                    textRect.Width = lvBracketing.Columns(columnIndex).Width
+                    textRect.Height = .Bounds.Height
+
+                    If lvBracketing.GridLines Then
+                        e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+                    End If
+
+                    If columnIndex = 0 Then textRect.X += ImageWidth
+
+                    textRect.X += textleftpad
+                    textRect.Width -= textleftpad
+
+                    If columnIndex < .SubItems.Count Then
+                        e.Graphics.DrawString(.SubItems(columnIndex).Text, lvBracketing.Font, Brushes.Black, textRect, sf)
+                    End If
+
+                    X += textRect.Width + textleftpad
+                Next
+                Y += .Bounds.Height
+            End With
+        Next
+
+        e.Graphics.DrawString(CStr(currentPage), lvBracketing.Font, Brushes.Black, ((e.PageBounds.Width - pageNumberWidth) / 2), e.PageBounds.Bottom - lvBracketing.Font.Height * 2)
+
+        sf.Dispose()
+        lastIndex = 0
+        currentPage = 0
+
+
+    End Sub
+
+    Private Sub Label2_Click(sender As Object, e As EventArgs) Handles Label2.Click
+
+    End Sub
+
+    Private Sub Button4_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button4.Click
+        If MsgBox("Are you sure to clear all the members on the list? ", MsgBoxStyle.OkCancel) = MsgBoxResult.Ok Then
+            membersList.Clear()
+            For k As Integer = 0 To lvMembers.Items.Count - 1
+                lvMembers.Items(k).BackColor = Color.White
+                lvBracketing.Items.Clear()
+            Next
+        End If
+    End Sub
+
+End Class
