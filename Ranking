@@ -1,0 +1,21 @@
+Public Class RankingForm
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Me.Close()
+
+    End Sub
+
+    Private Sub RankingForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim ranks = con.read("users,points", "users.id = points.user_id ORDER BY points.points DESC")
+        ListView1.Items.Clear()
+        Dim index = 1
+        For Each rank As List(Of Object) In ranks
+            With ListView1.Items.Add(index)
+                .SubItems.Add(rank(1) & " " & rank(3))
+                .SubItems.Add(rank(13))
+            End With
+            index = index + 1
+        Next
+
+    End Sub
+End Class
