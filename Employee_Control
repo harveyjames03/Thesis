@@ -1,0 +1,114 @@
+Public Class EmployeeControl
+    Dim users = New List(Of List(Of Object))
+    Dim mode = "view"
+
+    Private Sub EmployeeControl_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
+        LoadEmployee()
+    End Sub
+
+    Private Sub LoadEmployee()
+        ListView1.Items.Clear()
+
+        users = con.read("users, account", "users.type=3 AND users.id=account.user_id")
+        For Each i As List(Of Object) In users
+            With ListView1.Items.Add(i(0))
+                .SubItems.Add(i(3))
+                .SubItems.Add(i(1))
+                .SubItems.Add(i(6))
+            End With
+        Next
+
+
+    End Sub
+
+    Private Sub ListView1_SelectedIndexChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles ListView1.SelectedIndexChanged
+        If ListView1.SelectedIndices.Count > 0 Then
+            Dim u = users(ListView1.SelectedIndices(0))
+            txtFname.Text = u(1)
+            txtLname.Text = u(3)
+            txtMname.Text = u(2)
+            txtAge.Text = u(4)
+            txtAddress.Text = u(5)
+            txtContact.Text = u(6)
+            txtEmail.Text = u(7)
+
+            txtId.Text = u(12)
+            txtPassword.Text = u(13)
+        End If
+    End Sub
+
+    Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button1.Click
+        If mode = "view" Then
+            mode = "add"
+            Button1.Text = "Save"
+            clear()
+            enable(True)
+            txtId.Text = generateAuth()
+            txtPassword.Text = txtId.Text
+            Button2.Enabled = True
+        Else
+            Dim id = con.insert("users", "'','" & txtFname.Text & "','" & txtMname.Text & "','" & txtLname.Text & "','" & txtAge.Text & "','" & cmbGender.SelectedItem & "','" & txtAddress.Text & "','" & txtContact.Text & "','" & txtEmail.Text & "','3','1'")
+            con.insert("account", "'','" & txtId.Text & "','" & txtPassword.Text & "','" & id & "'")
+            MsgBox("Employee successfully added")
+
+            mode = "view"
+            Button1.Text = "Add New"
+            Button2.Enabled = False
+            clear()
+            enable(False)
+
+        End If
+
+        LoadEmployee()
+
+    End Sub
+
+    Public Sub enable(ByVal enable As Boolean)
+        txtFname.Enabled = enable
+        txtLname.Enabled = enable
+        txtMname.Enabled = enable
+        txtAge.Enabled = enable
+        txtAddress.Enabled = enable
+        txtContact.Enabled = enable
+        txtEmail.Enabled = enable
+        cmbGender.Enabled = enable
+    End Sub
+
+    Public Sub clear()
+        txtFname.Clear()
+        txtLname.Clear()
+        txtMname.Clear()
+        txtAge.Clear()
+        txtAddress.Clear()
+        txtContact.Clear()
+        txtEmail.Clear()
+    End Sub
+    Function generateAuth()
+        Dim d = DateTime.Now
+        Dim id = "SD" & d.Year & d.Month & d.Day & d.Hour & d.Minute & d.Second
+        Return id
+    End Function
+
+    Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
+        If MsgBox("Are you sure to cancel?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            clear()
+            enable(False)
+        End If
+       
+    End Sub
+
+    Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
+        clear()
+
+    End Sub
+    Private Sub updateEmployee()
+        On Error Resume Next
+
+    End Sub
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        On Error Resume Next
+        If MsgBox("Are you sure to update?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+
+        End If
+    End Sub
+End Class
