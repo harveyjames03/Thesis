@@ -1,0 +1,271 @@
+Public Class SalesUserControl
+
+    Dim totalSales = 0
+    Dim yearlySales = 0
+    Dim monthlySales = 0
+    Dim todaySales = 0
+
+    Private Sub SalesUserControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        getSales()
+    End Sub
+
+
+    Private Sub getSales()
+        ListView1.Items.Clear()
+        Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1")
+
+        For Each transaction In transactions
+
+            Dim payment = transaction(5)
+            Dim d = transaction(7)
+
+            'parse date
+            Dim tempDate = Date.Parse(d)
+
+            'get total sales
+            totalSales = totalSales + payment
+
+            'get today sales
+            Dim today = Date.Now
+            If today.Month = tempDate.Month And today.Year = tempDate.Year And today.Day = tempDate.Day Then
+                todaySales = todaySales + payment
+            End If
+
+            'get yearly sales
+
+            Dim year = Date.Now.Year
+            If tempDate.Year = year Then
+                yearlySales = yearlySales + payment
+            End If
+
+            'get monthly sales
+            Dim month = Date.Now.Month
+            If tempDate.Month = month Then
+                monthlySales = monthlySales + payment
+            End If
+
+            With ListView1.Items.Add(Integer.Parse(transaction(0)).ToString("D6"))
+                .SubItems.Add(transaction(10) & " " & transaction(12))
+                .SubItems.Add(d)
+                .SubItems.Add(payment)
+                Dim employee = con.read("users", "id=" & transaction(2))
+                .SubItems.Add(employee(0)(1) & " " & employee(0)(3))
+            End With
+        Next
+
+        'populate all the labels with the gathered data
+        lblTotal.Text = totalSales & ".00"
+        lblMonth.Text = monthlySales & ".00"
+        lblYear.Text = yearlySales & ".00"
+        lblToday.Text = todaySales & ".00"
+
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Dim PrintPreview As New PrintPreviewDialog
+        PrintPreview.Document = PrintDocument1
+        PrintPreview.ShowDialog()
+    End Sub
+
+    Private Sub PrintDocument1_PrintPage(sender As Object, e As Printing.PrintPageEventArgs) Handles PrintDocument1.PrintPage
+        If ListView1.View = View.Details Then
+            PrintDetails(e)
+        End If
+    End Sub
+    Private Sub PrintDetails(ByRef e As System.Drawing.Printing.PrintPageEventArgs)
+        Static lastIndex As Integer = 0
+        Static currentPage As Integer = 0
+
+        Dim dpiGraphics As Graphics = Me.CreateGraphics
+
+        Dim xx As Integer = dpiGraphics.DpiX
+        Dim yy As Integer = dpiGraphics.DpiY
+
+        dpiGraphics.Dispose()
+
+        Dim X, Y As Integer
+
+        Dim ImageWidth As Integer
+
+        Dim textRect As Rectangle = Rectangle.Empty
+        Dim textleftpad As Single = CSng(4 * (xx / 96)) '4 pixel pad o the left
+        Dim columnHeaderHeight As Single = CSng(ListView1.Font.Height + (10 * (xx / 96))) '5 pixel pad on the top and bottom
+        Dim stringformat As Single = e.Graphics.MeasureString(CStr(currentPage), ListView1.Font).Width
+        'specify the text should be drawn in the center of the line and that the text should not be wrapped and the text should show in elipsis would cut off
+        Dim pageNumberWidth As Single = e.Graphics.MeasureString(CStr(currentPage), ListView1.Font).Width
+        Dim sf = New StringFormat
+
+        sf.FormatFlags = StringFormatFlags.NoWrap
+        sf.Trimming = StringTrimming.EllipsisCharacter
+        sf.LineAlignment = StringAlignment.Center
+
+        currentPage += 1
+
+        X = CInt(e.MarginBounds.X)
+        Y = CInt(e.MarginBounds.Y)
+
+        e.Graphics.DrawString("Smash and Drop Sales Report", lblTotal.Font, Brushes.Black, CInt(e.MarginBounds.X), Y)
+        e.Graphics.DrawString("As of " & Date.Now.Month & " - " & Date.Now.Day & " - " & Date.Now.Year, lblTotal.Font, Brushes.Black, CInt(e.MarginBounds.X), Y + 50)
+
+        Y = Y + 100
+
+        For columIndex As Integer = 0 To ListView1.Columns.Count - 1
+            textRect.X = X
+            textRect.Y = Y
+            textRect.Width = ListView1.Columns(columIndex).Width
+            textRect.Height = columnHeaderHeight
+
+            e.Graphics.FillRectangle(Brushes.LightGray, textRect)
+            e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+
+            textRect.X += textleftpad
+            textRect.Width -= textleftpad
+
+            e.Graphics.DrawString(ListView1.Columns(columIndex).Text, ListView1.Font, Brushes.Black, textRect, sf)
+            X += textRect.Width + textleftpad
+
+        Next
+        'just drew the headers move the y down the height of the column headers
+        Y += columnHeaderHeight
+
+        'draw the items if this is hte first page then the last index will be zero. if its not then the last index
+        'will be the last index we tried to draw but had no room
+
+        For i = lastIndex To ListView1.Items.Count - 1
+            With ListView1.Items(i)
+                'start the x at the pages left margin
+                X = CInt(e.MarginBounds.X)
+
+                If Y + .Bounds.Height > e.MarginBounds.Bottom Then
+                    'THIS ITEM WONT FIT SUBTRACT 1 FR=OM i so the next time this sub
+                    'is entered we can start with this item
+                    lastIndex = i - 1
+                    e.HasMorePages = True
+                    sf.Dispose()
+
+                    'Draw the current page number before leaving
+                    e.Graphics.DrawString(CStr(currentPage), ListView1.Font, Brushes.Black, (e.PageBounds.Width - pageNumberWidth) / 2, (e.PageBounds.Bottom - (ListView1.Font.Height * 2)))
+
+                    Exit Sub
+                    'Y += .Bounds.Height
+                End If
+                'Now draw the subitems. using the columns count so the grid lines can be drawn. If used the subitems count then the table would not be full if some subitems where less than others
+                For columnIndex As Integer = 0 To ListView1.Columns.Count - 1
+                    textRect.X = X
+                    textRect.Y = Y
+                    textRect.Width = ListView1.Columns(columnIndex).Width
+                    textRect.Height = .Bounds.Height
+
+                    If ListView1.GridLines Then
+                        e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+                    End If
+
+                    If columnIndex = 0 Then textRect.X += ImageWidth
+
+                    textRect.X += textleftpad
+                    textRect.Width -= textleftpad
+
+                    If columnIndex < .SubItems.Count Then
+                        e.Graphics.DrawString(.SubItems(columnIndex).Text, ListView1.Font, Brushes.Black, textRect, sf)
+                    End If
+
+                    X += textRect.Width + textleftpad
+                Next
+                Y += .Bounds.Height
+            End With
+        Next
+
+        e.Graphics.DrawString(CStr(currentPage), ListView1.Font, Brushes.Black, ((e.PageBounds.Width - pageNumberWidth) / 2), e.PageBounds.Bottom - ListView1.Font.Height * 2)
+
+        e.Graphics.DrawString("Total Sales: " & lblTotal.Text, lblTotal.Font, Brushes.Black, CInt(e.MarginBounds.X), Y + 10)
+        e.Graphics.DrawString("This Month: " & lblMonth.Text, lblTotal.Font, Brushes.Black, CInt(e.MarginBounds.X), Y + 50)
+        e.Graphics.DrawString("This Year: " & lblYear.Text, lblTotal.Font, Brushes.Black, CInt(e.MarginBounds.X), Y + 100)
+
+        sf.Dispose()
+        lastIndex = 0
+        currentPage = 0
+
+
+    End Sub
+
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        Panel3.Visible = False
+        If ComboBox1.SelectedIndex = 0 Then
+            getSales()
+
+        ElseIf (ComboBox1.SelectedIndex = 1) Then
+            ListView1.Items.Clear()
+            Dim year = Date.Now.Year
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1 AND YEAR(transaction.date) = " & year)
+            For Each transaction In transactions
+                'With ListView1.Items.Add(transaction(0))
+                '    .SubItems.Add(transaction(2))
+                '    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                '    .SubItems.Add(transaction(10) & " " & transaction(12))
+                '    .SubItems.Add(transaction(6))
+                '    .SubItems.Add(transaction(8))
+                'End With
+                With ListView1.Items.Add(Integer.Parse(transaction(0)).ToString("D6"))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(7))
+                    .SubItems.Add(transaction(5))
+                    Dim employee = con.read("users", "id=" & transaction(2))
+                    .SubItems.Add(employee(0)(1) & " " & employee(0)(3))
+                End With
+            Next
+
+        ElseIf (ComboBox1.SelectedIndex = 2) Then
+
+            ListView1.Items.Clear()
+            Dim year = Date.Now.Month
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1 AND MONTH(transaction.date) = " & year)
+            For Each transaction In transactions
+                With ListView1.Items.Add(Integer.Parse(transaction(0)).ToString("D6"))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(7))
+                    .SubItems.Add(transaction(5))
+                    Dim employee = con.read("users", "id=" & transaction(2))
+                    .SubItems.Add(employee(0)(1) & " " & employee(0)(3))
+                End With
+            Next
+        ElseIf (ComboBox1.SelectedIndex = 3) Then
+
+            ListView1.Items.Clear()
+            Dim now = Date.Now
+            Dim today = now.ToString("yyyy-MM-dd")
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1 AND transaction.date = ('" & today & "')")
+            For Each transaction In transactions
+                With ListView1.Items.Add(Integer.Parse(transaction(0)).ToString("D6"))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(7))
+                    .SubItems.Add(transaction(5))
+                    Dim employee = con.read("users", "id=" & transaction(2))
+                    .SubItems.Add(employee(0)(1) & " " & employee(0)(3))
+                End With
+            Next
+
+        ElseIf (ComboBox1.SelectedIndex = 4) Then
+            Panel3.Visible = True
+        End If
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If DateTimePicker2.Value > DateTimePicker1.Value Then
+            ListView1.Items.Clear()
+            Dim startDate = DateTimePicker1.Value.ToString("yyyy-MM-dd")
+            Dim endDate = DateTimePicker2.Value.ToString("yyyy-MM-dd")
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1 AND transaction.date >= ('" & startDate & "') AND transaction.date <= ('" & endDate & "')")
+            For Each transaction In transactions
+                With ListView1.Items.Add(Integer.Parse(transaction(0)).ToString("D6"))
+                    .SubItems.Add(transaction(2))
+                    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(6))
+                    .SubItems.Add(transaction(8))
+                End With
+            Next
+        Else
+            MsgBox("Date invalid. Please try again", vbCritical + vbOKOnly, "Smash and Drop")
+        End If
+    End Sub
+End Class
