@@ -1,0 +1,521 @@
+Imports System.IO.Ports
+Imports Firmata.FirmataVB
+Imports Firmata.DigitalPinControl
+Imports Firmata.AnalogPinControl
+
+
+Public Class Court
+
+    Private DigitalPins As New Hashtable
+
+    Public courtNumber As Integer
+    Dim isVacant = True
+    Public reservation As New Reservation
+    Dim isLightsOn = False
+    Dim com As IO.Ports.SerialPort
+
+    Dim ThisCtrl As Firmata.DigitalPinControl = Nothing
+    Public arduino As New Firmata.FirmataVB
+
+    Dim pin13 As Integer
+    Dim pin12 As Integer
+    Dim pin11 As Integer
+    Dim pin10 As Integer
+    Dim pin9 As Integer
+    Dim pin8 As Integer
+    Dim pin7 As Integer
+    Dim pin6 As Integer
+
+    Dim pin5 As Integer
+    Dim pin4 As Integer
+    Dim pin3 As Integer
+    Dim pin2 As Integer
+    Dim pin1 As Integer
+  
+
+    Public Property Vacant As Boolean
+        Get
+            Return isVacant
+        End Get
+        Set(value As Boolean)
+            isVacant = value
+        End Set
+    End Property
+    Dim memberId As Integer
+    Public Sub New(courtNumber As Integer)
+
+        ' This call is required by the designer.
+        InitializeComponent()
+
+        ' Add any initialization after the InitializeComponent() call.
+        Me.courtNumber = courtNumber
+       
+
+    End Sub
+    Private Sub Court_Click(sender As Object, e As EventArgs) Handles Me.Click
+        If Vacant Then
+            Dim form As New NewClientForm
+            form.courtNumber = courtNumber
+            form.ShowDialog()
+
+            If form.success = True Then
+                reservation = form.reservation
+                startTime()
+            End If
+            form.Dispose()
+        End If
+
+    End Sub
+
+    Public Sub startTime()
+        Me.BackColor = Color.Red
+        Vacant = False
+
+        txtClient.Text = reservation.name
+        txtStart.Text = reservation.getTime(reservation.startTime)
+        txtEnd.Text = reservation.getTime(reservation.endTime)
+
+        btnLogoff.Visible = True
+        btnExtend.Visible = True
+
+        txtStatus.Text = "00:00:00"
+        Timer1.Start()
+    End Sub
+    Dim mId As Integer
+
+    Public Sub setMemberId(ByVal id As Integer)
+        Me.mId = id
+        lblMemberId.Text = Me.mId
+    End Sub
+    Private Sub Court_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        pin13 = 0
+        pin12 = 0
+        pin11 = 0
+        pin10 = 0
+
+        pin9 = 0
+        pin8 = 0
+        pin7 = 0
+        pin6 = 0
+
+        pin5 = 0
+        pin4 = 0
+        pin3 = 0
+        pin2 = 0
+        pin1 = 0
+
+        'Dim ThisCtrl As New Firmata.DigitalPinControl
+
+        'ThisCtrl.PinNumber = 13
+        'ThisCtrl.PinNumber = 12
+
+
+        ''this is to initialize the control
+        'Me.DigitalPins.Add(CStr(ThisCtrl.PinNumber), ThisCtrl)
+
+
+        'AddHandler ThisCtrl.DigitalSend, AddressOf DigitalPinControl_DigitalSend
+        'AddHandler ThisCtrl.PinMode_Changed, AddressOf DigitalPinControl_PinMode_Changed
+
+        'If arduino Is Nothing Then
+
+        '    arduino.Connect("COM18", 115200)
+        'End If
+
+        txtName.Text = "COURT " & courtNumber
+        If reservation.id <> 0 Then
+            lblMemberId.Text = reservation.memberId
+        Else
+            lblMemberId.Text = "0"
+        End If
+
+    End Sub
+    'Private Sub DigitalPinControl_DigitalSend(ByVal PinNumber As Integer, ByVal value As Integer)
+
+    '    arduino.Connect("COM18", 115200)
+
+    '    arduino.DigitalWrite(PinNumber, value)
+    'End Sub
+    'Private Sub DigitalPinControl_PinMode_Changed(ByVal PinNumber As Integer, ByVal Mode As Firmata.DigitalPinControl.PinModes)
+    '    If arduino.PortOpen = True Then
+    '        arduino.PinMode(PinNumber, Mode)
+    '    End If
+    'End Sub
+    Dim comPort As String = "COM18"
+    Sub onBuzz(ByVal port As String, ByVal pin As Integer, ByVal onValue As String)
+        'Try
+        '    Using com As IO.Ports.SerialPort = My.Computer.Ports.OpenSerialPort(port)
+        '        If com.IsOpen Then
+        '            If pin = 13 Then
+        '                com.Write(onValue)
+        '                pin13 = 1
+        '            ElseIf pin = 12 Then
+        '                com.Write(onValue)
+        '                pin12 = 1
+        '            ElseIf pin = 11 Then
+        '                com.Write(onValue)
+        '                pin11 = 1
+        '            ElseIf pin = 10 Then
+        '                com.Write(onValue)
+        '                pin10 = 1
+        '            ElseIf pin = 9 Then
+        '                com.Write(onValue)
+        '                pin9 = 1
+        '            ElseIf pin = 8 Then
+        '                com.Write(onValue)
+        '                pin8 = 1
+        '            ElseIf pin = 7 Then
+        '                com.Write(onValue)
+        '                pin7 = 1
+        '            ElseIf pin = 6 Then
+        '                com.Write(onValue)
+        '                pin6 = 1
+        '            ElseIf pin = 5 Then
+        '                com.Write(onValue)
+        '                pin5 = 1
+        '            ElseIf pin = 4 Then
+        '                com.Write(onValue)
+        '                pin4 = 1
+        '            ElseIf pin = 3 Then
+        '                com.Write(onValue)
+        '                pin3 = 1
+        '            ElseIf pin = 2 Then
+        '                com.Write(onValue)
+        '                pin2 = 1
+        '            ElseIf pin = 1 Then
+        '                com.Write(onValue)
+        '                pin1 = 1
+        '            End If
+        '        End If
+        '    End Using
+
+        '    ' MsgBox("Time is up for court " & courtNumber & ". A Customer is logging out.")
+        'Catch ex As Exception
+        '    MsgBox("Port not found, please connect your device.")
+        'End Try
+    End Sub
+
+    Sub offBuzz(ByVal port As String, ByVal pin As Integer, ByVal offValue As String)
+        Try
+            'Using com As IO.Ports.SerialPort = My.Computer.Ports.OpenSerialPort(port)
+            '    If com.IsOpen Then
+            '        If pin = 13 Then
+            '            com.Write(offValue)
+            '            pin13 = 0
+            '        ElseIf pin = 12 Then
+            '            com.Write(offValue)
+            '            pin12 = 0
+            '        ElseIf pin = 11 Then
+            '            com.Write(offValue)
+            '            pin11 = 0
+            '        ElseIf pin = 10 Then
+            '            com.Write(offValue)
+            '            pin10 = 0
+            '        ElseIf pin = 9 Then
+            '            com.Write(offValue)
+            '            pin9 = 0
+            '        ElseIf pin = 8 Then
+            '            com.Write(offValue)
+            '            pin8 = 0
+            '        ElseIf pin = 7 Then
+            '            com.Write(offValue)
+            '            pin7 = 0
+            '        ElseIf pin = 6 Then
+            '            com.Write(offValue)
+            '            pin6 = 0
+            '        ElseIf pin = 5 Then
+            '            com.Write(offValue)
+            '            pin5 = 0
+            '        ElseIf pin = 4 Then
+            '            com.Write(offValue)
+            '            pin4 = 0
+            '        ElseIf pin = 3 Then
+            '            com.Write(offValue)
+            '            pin3 = 0
+            '        ElseIf pin = 2 Then
+            '            com.Write(offValue)
+            '            pin2 = 0
+            '        ElseIf pin = 1 Then
+            '            com.Write(offValue)
+            '            pin1 = 0
+            '        End If
+            '    End If
+            'End Using
+
+            ' MsgBox("Time is up for court " & courtNumber & ". A Customer is logging out.")
+        Catch ex As Exception
+            'MsgBox("Port not found, please connect your device.")
+        End Try
+    End Sub
+    Private Sub offWhite()
+        On Error Resume Next
+
+        If courtNumber = 1 Then
+            offBuzz("COM18", 1, "B")
+            pin1 = 0
+        ElseIf courtNumber = 2 Then
+            offBuzz("COM18", 2, "D")
+            pin2 = 0
+        End If
+    End Sub
+    Private Sub onnWhite()
+        On Error Resume Next
+        If courtNumber = 1 Then
+            onBuzz("COM18", 1, "A")
+            pin1 = 1
+        ElseIf courtNumber = 2 Then
+            onBuzz("COM18", 2, "C")
+            pin2 = 1
+        End If
+    End Sub
+    Private Sub offYellow()
+         If courtNumber = 1 Then
+            offBuzz("COM18", 7, "N")
+            pin7 = 1
+        ElseIf courtNumber = 2 Then
+            offBuzz("COM18", 6, "L")
+            pin6 = 1
+        ElseIf courtNumber = 3 Then
+            offBuzz("COM18", 5, "J")
+            pin5 = 1
+        ElseIf courtNumber = 4 Then
+            offBuzz("COM18", 4, "H")
+            pin4 = 1
+        ElseIf courtNumber = 5 Then
+            offBuzz("COM18", 11, "J")
+            pin5 = 1
+        End If
+    End Sub
+
+    Private Sub onYellow()
+        If courtNumber = 1 Then
+            onBuzz("COM18", 7, "M")
+            pin7 = 1
+        ElseIf courtNumber = 2 Then
+            onBuzz("COM18", 6, "K")
+            pin6 = 1
+        ElseIf courtNumber = 3 Then
+            onBuzz("COM18", 5, "I")
+            pin5 = 1
+        ElseIf courtNumber = 4 Then
+            onBuzz("COM18", 4, "G")
+            pin4 = 1
+        ElseIf courtNumber = 5 Then
+            onBuzz("COM18", 3, "E")
+            pin3 = 1
+        End If
+    End Sub
+
+    Private Sub addPoint(ByVal id As Integer)
+        On Error Resume Next
+        con.update("points", " points=points+1", " user_id='" & id & "'")
+    End Sub
+    Private Sub Timer1_Tick(ByVal sender As Object, ByVal e As EventArgs) Handles Timer1.Tick
+        On Error Resume Next
+        onnWhite()
+        lblMemberId.Text = reservation.memberId
+
+        Dim timeNow = DateTime.Now
+
+        lblSystemTime.Text = timeNow
+
+        Dim passed = timeNow.Subtract(reservation.startTime)
+
+        Dim r = reservation.startTime.ToString().Split(":")
+        Dim reservationMinute = r(1)
+
+        Dim endTime = reservation.endTime.ToString().Split(":")
+
+        Dim alarm As Integer = Convert.ToInt32(reservationMinute) - Convert.ToInt32(timeNow.Minute)
+        Dim timeHour = endTime(0).ToString().Split(" ")
+
+        'Dim H As Integer = 0
+
+        'If timeNow.Hour < 12 Then
+        '    H = 12 - timeNow.Hour
+        'Else
+        '    H = timeNow.Hour - 12
+        'End If
+
+        lblMinuteSub.Text = "minute:" & alarm & "===> HOUR:" & timeHour(1) & "==" & timeHour(1)
+
+        If alarm = 5 And timeHour(1) = timeHour(1) Then
+            onYellow()
+            lblMinuteSub.Text = "5 minutes left for " & courtNumber
+        End If
+
+        txtStatus.Text = Format(passed.Hours, "00") & ":" & Format(passed.Minutes, "00") & ":" & Format(passed.Seconds, "00")
+
+        If reservation.hours = passed.Hours Then
+            Me.BackColor = Color.AliceBlue
+            Timer1.Stop()
+            Onn()
+            offYellow()
+            offWhite()
+            addPoint(Convert.ToInt32(lblMemberId.Text))
+        End If
+    End Sub
+    Private Sub Onn()
+        If courtNumber = 1 Then
+            onBuzz(comPort, 13, "Y")
+            pin13 = 1
+        ElseIf courtNumber = 2 Then
+            onBuzz(comPort, 12, "W")
+            pin12 = 1
+        ElseIf courtNumber = 3 Then
+            onBuzz(comPort, 11, "U")
+            pin11 = 1
+        ElseIf courtNumber = 4 Then
+            onBuzz(comPort, 10, "S")
+            pin10 = 1
+        ElseIf courtNumber = 5 Then
+            onBuzz(comPort, 9, "Q")
+            pin9 = 1
+        ElseIf courtNumber = 6 Then
+            onBuzz(comPort, 8, "O")
+            pin8 = 1
+
+        End If
+    End Sub
+    Private Sub off()
+        If courtNumber = 1 Then
+            onBuzz(comPort, 13, "Z")
+            pin13 = 0
+        ElseIf courtNumber = 2 Then
+            onBuzz(comPort, 12, "X")
+            pin12 = 0
+        ElseIf courtNumber = 3 Then
+            onBuzz(comPort, 11, "V")
+            pin11 = 0
+        ElseIf courtNumber = 4 Then
+            onBuzz(comPort, 10, "T")
+            pin10 = 0
+        ElseIf courtNumber = 5 Then
+            onBuzz(comPort, 9, "R")
+            pin9 = 0
+        ElseIf courtNumber = 6 Then
+            onBuzz(comPort, 8, "P")
+            pin8 = 0
+
+        End If
+    End Sub
+    Private Sub btnLogoff_Click(sender As Object, e As EventArgs) Handles btnLogoff.Click
+        'tURN OFF HERE
+        On Error Resume Next
+
+        off()
+
+        Dim form As New Cashier
+        form.reservation = reservation
+        form.ShowDialog()
+        If form.success Then
+            addPoint(Convert.ToInt32(lblMemberId.Text))
+            MsgBox("This client accumulated another point.")
+            Vacant = True
+            Me.BackColor = Color.LimeGreen
+            Timer1.Stop()
+            txtStatus.Text = "VACANT"
+            txtClient.Text = "NA"
+            txtStart.Text = "NA"
+            txtEnd.Text = "NA"
+            btnLogoff.Visible = False
+            btnExtend.Visible = False
+
+            Dim parent As HomeControl = Me.Parent.Parent
+            reservation = parent.getWaitingIfExist
+            If Not IsNothing(reservation) Then
+                reservation.startTime = DateTime.Now
+                reservation.endTime = DateTime.Now.AddHours(reservation.hours)
+                con.update("reservation", "start_time='" & reservation.getMilitaryTime(reservation.startTime) & "', end_time='" & reservation.getMilitaryTime(reservation.endTime) & "', court_no=" & courtNumber, "id=" & reservation.id)
+                MsgBox("Client " & reservation.name & " can now use court " & courtNumber, vbInformation + vbOKOnly, "Smash and Drop")
+                startTime()
+            End If
+        End If
+
+       
+    End Sub
+
+    Public Sub GetReservation()
+        Dim existing = con.read("reservation", "status=2 AND court_no=" & courtNumber)
+        On Error Resume Next
+
+        If existing.Count > 0 Then
+            Dim user = con.read("users", "id='" & existing(0)(1) & "'")
+            reservation.name = user(0)(1) & " " & user(0)(3)
+            reservation.memberId = existing(0)(1)
+            reservation.startTime = DateTime.Parse(existing(0)(3))
+            reservation.endTime = DateTime.Parse(existing(0)(4))
+            reservation.employeeId = existing(0)(7)
+            reservation.hours = existing(0)(8)
+            reservation.dateReserved = Date.Parse(existing(0)(2))
+            reservation.courtNumber = existing(0)(6)
+            reservation.id = existing(0)(0)
+            startTime()
+        End If
+
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles btnExtend.Click
+        'tURN OFF HERE
+        off()
+
+        Dim form As New ExtendTimeForm
+        form.reservation = reservation
+        form.ShowDialog()
+        If form.success Then
+            reservation = form.reservation
+            txtEnd.Text = reservation.getTime(reservation.endTime)
+            Me.BackColor = Color.Red
+            Timer1.Start()
+        End If
+    End Sub
+
+    Private Sub Button1_Click_1(sender As Object, e As EventArgs)
+
+        'arduino.Connect("COM18", 2400)
+
+
+        'this sends signal 1 to pin 13
+        'DigitalPinControl_PinMode_Changed(13, PinModes.OUTPUT_DIGITAL)
+
+        'Dim pin13 As Integer = 13
+
+        'Dim value As Integer = arduino.DigitalRead(pin13)
+
+        'If value <> 0 Then
+        '    MsgBox(value & "  : ")
+        '    arduino.DigitalWrite(13, value)
+
+        'Else
+        '    MsgBox(value & "  : 0")
+        '    ' DigitalPinControl_DigitalSend(13, 0)
+        'End If
+
+
+
+
+        'If isLightsOn Then
+        '    SendSerialData("0")
+        '    isLightsOn = False
+        'Else
+        '    SendSerialData("1")
+        '    isLightsOn = True
+        'End If
+        'isLightsOn = Not isLightsOn
+    End Sub
+
+    Sub SendSerialData(ByVal data As String)
+        ' Send strings to a serial port.
+        Using com As IO.Ports.SerialPort =
+               My.Computer.Ports.OpenSerialPort("COM17")
+            com.WriteLine(data)
+        End Using
+
+        ' com.WriteLine(data)
+
+    End Sub
+
+    Private Sub txtStatus_Click(sender As Object, e As EventArgs) Handles txtStatus.Click
+
+    End Sub
+End Class
