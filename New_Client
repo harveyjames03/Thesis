@@ -1,0 +1,228 @@
+Public Class NewClientForm
+
+    Dim members As New List(Of List(Of Object))
+    Dim rate = 0.0
+    Public success = False
+    Public courtNumber As Integer = 0
+    Public reservation As New Reservation
+    Public courts As New List(Of Court)
+
+    Private Sub Label3_Click(sender As Object, e As EventArgs) Handles Label3.Click
+
+    End Sub
+
+    'Public Sub GetRate()
+    '    Dim rates = con.read("services", "name='court'")
+    '    rate = Integer.Parse(rates(0)(2))
+    '    lblRate.Text = Format(rate, "0.00")
+
+    'End Sub
+
+    'Private Sub NewClientForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    '    LoadMembers()
+    '    ComboBox1.SelectedIndex = 0
+    '    lblStart.Text = TimeOfDay.Hour & ":" & Format(TimeOfDay.Minute, "00")
+    '    lblEnd.Text = (TimeOfDay.Hour + 1) & ":" & Format(TimeOfDay.Minute, "00")
+    '    txtHour.Value = 1
+
+
+    '    GetRate()
+    '    lblTotal.Text = Format(txtHour.Value * rate, "0.00")
+    'End Sub
+
+    Private Sub LoadMembers()
+        ListView1.Items.Clear()
+        members = con.read("users", "type=1 AND status=1")
+        For Each member As List(Of Object) In members
+            With ListView1.Items.Add(member(0))
+                .SubItems.Add(member(1))
+                .SubItems.Add(member(3))
+                .SubItems.Add(member(6))
+            End With
+        Next
+    End Sub
+
+    Private Sub ListView1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListView1.SelectedIndexChanged
+        If ListView1.SelectedIndices.Count > 0 Then
+            Dim member = members(ListView1.SelectedIndices(0))
+
+            txtFname.Text = member(1)
+            txtLname.Text = member(3)
+            txtMname.Text = member(2)
+            cmbGender.SelectedItem = member(5)
+
+            Dim c As New Court(courtNumber)
+            c.setMemberId(reservation.memberId)
+        End If
+    End Sub
+
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        If ComboBox1.SelectedIndex = 0 Then
+
+            txtFname.Enabled = False
+            txtMname.Enabled = False
+            txtLname.Enabled = False
+            ListView1.Enabled = True
+            txtFname.Clear()
+            txtMname.Clear()
+            txtLname.Clear()
+        Else
+            ListView1.Enabled = False
+            txtFname.Clear()
+            txtMname.Clear()
+            txtLname.Clear()
+            txtFname.Enabled = True
+            txtMname.Enabled = True
+            txtLname.Enabled = True
+        End If
+    End Sub
+
+    'Private Sub txtHour_ValueChanged(sender As Object, e As EventArgs) Handles txtHour.ValueChanged
+        
+    'End Sub
+
+    'Private Sub txtCash_TextChanged(sender As Object, e As EventArgs)
+    '    Dim change = Val(txtCash.Text) - Val(lblTotal.Text)
+    '    If change >= 0 Then
+    '        lblChange.ForeColor = Color.Black
+    '        Button1.Enabled = True
+    '    Else
+    '        lblChange.ForeColor = Color.Red
+    '        Button1.Enabled = False
+    '    End If
+    '    lblChange.Text = Format(change, "0.00")
+    'End Sub
+
+    'Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+
+        
+
+
+    'End Sub
+
+    Private Sub Button1_Click(ByVal sender As Object, ByVal e As EventArgs) Handles Button1.Click
+        On Error Resume Next
+
+        If txtFname.Text = "" Or txtLname.Text = "" Or txtMname.Text = "" Or cmbGender.Text = "" Then
+            MsgBox("Please complete the customers name.")
+        else
+            If ComboBox1.SelectedIndex = 1 Then
+                Dim check = con.read("users", "fname='" & txtFname.Text & "' AND lname='" & txtLname.Text & "'")
+                If check.Count > 0 Then
+                    If MsgBox("User is already a member. Would you like to use it instead", vbQuestion + vbYesNo, "Smash and Drop") = vbYes Then
+                        ComboBox1.SelectedIndex = 0
+                        For i As Integer = 0 To ListView1.Items.Count - 1
+                            If ListView1.Items(i).Text = check(0)(0) Then
+                                ListView1.Items(i).Selected = True
+                            End If
+                        Next
+                    End If
+                End If
+            End If
+
+            If courtNumber = 0 Then
+                If cmbCourt.Items.Count = 0 Then
+                    courtNumber = 7
+                Else
+                    MsgBox("Please select a court from the list")
+                    Exit Sub
+                End If
+
+            End If
+            If ComboBox1.SelectedIndex = 1 Then
+                Dim id = con.insert("users", "'','" & txtFname.Text & "','" & txtMname.Text & "','" & txtLname.Text & "','','" & cmbGender.Text & "','','','','0','1'")
+
+                
+
+                reservation.name = txtFname.Text & " " & txtLname.Text
+                reservation.memberId = id
+                reservation.startTime = DateTime.Now
+                reservation.endTime = DateTime.Now.AddHours(txtHour.Value)
+                reservation.employeeId = currentUser(0)
+                reservation.hours = txtHour.Value
+                reservation.dateReserved = Date.Now
+                reservation.courtNumber = courtNumber
+                reservation.saveToDatabase()
+                
+                'con.insert("transaction", "'','" & id & "','" & currentUser(0) & "','" & lblTotal.Text & "','1'")
+                MsgBox("Transaction successful")
+                success = True
+
+               
+
+                Me.Close()
+            Else
+
+                Dim id = members(ListView1.SelectedIndices(0))(0)
+                'con.insert("transaction", "'','" & id & "','" & currentUser(0) & "','" & lblTotal.Text & "','1'")
+             
+               
+
+                reservation.name = txtFname.Text & " " & txtLname.Text
+                reservation.memberId = id.ToString
+                reservation.startTime = DateTime.Now
+                reservation.endTime = DateTime.Now.AddHours(txtHour.Value)
+                reservation.employeeId = currentUser(0)
+                reservation.hours = txtHour.Value
+                reservation.dateReserved = Date.Now
+                reservation.courtNumber = courtNumber
+                reservation.saveToDatabase()
+
+                MsgBox("Transaction successful")
+                success = True
+
+               
+
+                Me.Close()
+            End If
+        End If
+
+        Dim court As New Court(courtNumber)
+        court.lblMemberId.Text = reservation.memberId
+
+
+    End Sub
+
+    Private Sub NewClientForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        ComboBox1.SelectedIndex = 0
+        LoadMembers()
+        'lblStart.Text = TimeOfDay.Hour & ":" & Format(TimeOfDay.Minute, "00")
+        'lblEnd.Text = (TimeOfDay.Hour + 1) & ":" & Format(TimeOfDay.Minute, "00")
+
+        lblStart.Text = TimeOfDay.ToString("hh:mm tt")
+        lblEnd.Text = TimeOfDay.ToString("hh:mm tt")
+
+        txtHour.Value = 1
+
+        If courtNumber = 0 Then
+            cmbCourt.Enabled = True
+            cmbCourt.Items.Clear()
+            For Each court As Court In courts
+                If court.Vacant Then
+                    cmbCourt.Items.Add(court.courtNumber)
+                End If
+            Next
+            If cmbCourt.Items.Count = 0 Then
+                lblMessage.Visible = True
+            End If
+        End If
+
+    End Sub
+
+    Private Sub txtHour_ValueChanged(sender As Object, e As EventArgs) Handles txtHour.ValueChanged
+        'lblEnd.Text = (TimeOfDay.Hour + txtHour.Value) & ":" & Format(TimeOfDay.Minute, "00")
+        lblEnd.Text = TimeOfDay.AddHours(txtHour.Value).ToString("hh:mm tt")
+    End Sub
+
+    Private Sub cmbCourt_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbCourt.SelectedIndexChanged
+        courtNumber = Val(cmbCourt.SelectedItem)
+
+    End Sub
+
+    
+    Private Sub PictureBox3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox3.Click
+        If MsgBox("Are you sure to exit?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Me.Hide()
+        End If
+    End Sub
+End Class
