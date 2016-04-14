@@ -1,0 +1,152 @@
+Public Class SalesControl
+
+    Dim totalSales = 0
+    Dim yearlySales = 0
+    Dim monthlySales = 0
+    Dim todaySales = 0
+
+    Private Sub Label8_Click(sender As Object, e As EventArgs) Handles Label8.Click
+
+    End Sub
+
+    Private Sub SalesControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        getSales()
+    End Sub
+
+    Private Sub getSales()
+        ListView1.Items.Clear()
+        Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=1")
+
+        For Each transaction In transactions
+
+            Dim payment = transaction(5)
+            Dim d = transaction(7)
+
+            'get total sales
+            totalSales = totalSales + payment
+
+            'get today sales
+            Dim today = Date.Now.ToString("yyyy-MM-dd")
+            If today = d.ToString Then
+                todaySales = todaySales + payment
+            End If
+
+            'get yearly sales
+            Dim tempDate = Date.Parse(d)
+            Dim year = Date.Now.Year
+            If tempDate.Year = year Then
+                yearlySales = yearlySales + payment
+            End If
+
+            'get monthly sales
+            Dim month = Date.Now.Month
+            If tempDate.Month = month Then
+                monthlySales = monthlySales + payment
+            End If
+
+            With ListView1.Items.Add(transaction(0))
+                .SubItems.Add(transaction(10) & " " & transaction(12))
+                .SubItems.Add(d)
+                .SubItems.Add(payment)
+            End With
+        Next
+
+        'populate all the labels with the gathered data
+        lblTotal.Text = totalSales
+        lblMonth.Text = monthlySales
+        lblYear.Text = yearlySales
+        lblToday.Text = todaySales
+
+    End Sub
+
+
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        Panel3.Visible = False
+        If ComboBox1.SelectedIndex = 0 Then
+            getSales()
+
+        ElseIf (ComboBox1.SelectedIndex = 1) Then
+            ListView1.Items.Clear()
+            Dim year = Date.Now.Year
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=3 AND YEAR(transaction.date) = " & year)
+            For Each transaction In transactions
+                With ListView1.Items.Add(transaction(0))
+                    .SubItems.Add(transaction(2))
+                    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(6))
+                    .SubItems.Add(transaction(8))
+                End With
+            Next
+
+        ElseIf (ComboBox1.SelectedIndex = 2) Then
+
+            ListView1.Items.Clear()
+            Dim year = Date.Now.Month
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=3 AND MONTH(transaction.date) = " & year)
+            For Each transaction In transactions
+                With ListView1.Items.Add(transaction(0))
+                    .SubItems.Add(transaction(2))
+                    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(6))
+                    .SubItems.Add(transaction(8))
+                End With
+            Next
+        ElseIf (ComboBox1.SelectedIndex = 3) Then
+
+            ListView1.Items.Clear()
+            Dim now = Date.Now
+            Dim today = now.ToString("yyyy-MM-dd")
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=3 AND transaction.date = ('" & today & "')")
+            For Each transaction In transactions
+                With ListView1.Items.Add(transaction(0))
+                    .SubItems.Add(transaction(2))
+                    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(6))
+                    .SubItems.Add(transaction(8))
+                End With
+            Next
+
+        ElseIf (ComboBox1.SelectedIndex = 4) Then
+            Panel3.Visible = True
+        End If
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If DateTimePicker2.Value > DateTimePicker1.Value Then
+            ListView1.Items.Clear()
+            Dim startDate = DateTimePicker1.Value.ToString("yyyy-MM-dd")
+            Dim endDate = DateTimePicker2.Value.ToString("yyyy-MM-dd")
+            Dim transactions = con.read("transaction,users", "transaction.user_id  = users.id AND transaction.status=3 AND transaction.date >= ('" & startDate & "') AND transaction.date <= ('" & endDate & "')")
+            For Each transaction In transactions
+                With ListView1.Items.Add(transaction(0))
+                    .SubItems.Add(transaction(2))
+                    .SubItems.Add(transaction(3) & "-" & transaction(4))
+                    .SubItems.Add(transaction(10) & " " & transaction(12))
+                    .SubItems.Add(transaction(6))
+                    .SubItems.Add(transaction(8))
+                End With
+            Next
+        Else
+            MsgBox("Date invalid. Please try again", vbCritical + vbOKOnly, "Smash and Drop")
+        End If
+    End Sub
+
+    Private Sub Label13_Click(sender As Object, e As EventArgs) Handles Label13.Click
+
+    End Sub
+
+    Private Sub TextBox1_TextChanged(sender As Object, e As EventArgs) Handles TextBox1.TextChanged
+
+    End Sub
+
+    Private Sub Panel3_Paint(sender As Object, e As PaintEventArgs) Handles Panel3.Paint
+
+    End Sub
+
+    Private Sub Label10_Click(sender As Object, e As EventArgs) Handles Label10.Click
+
+    End Sub
+End Class
