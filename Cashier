@@ -1,0 +1,186 @@
+Public Class Cashier
+    Public reservation As Reservation
+    Dim rate As Integer
+    Public success = False
+
+    Private Sub Cashier_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
+        GetRate()
+        lblHours.Text = reservation.hours
+        lblTotal.Text = rate * reservation.hours
+        txtName.Text = reservation.name
+        txtCash.Focus()
+    End Sub
+
+    Public Sub GetRate()
+        Dim rates = con.read("services", "name='court'")
+        rate = Integer.Parse(rates(0)(2))
+        lblRate.Text = Format(rate, "0.00")
+
+    End Sub
+
+    Private Sub txtCash_TextChanged(sender As Object, e As EventArgs) Handles txtCash.TextChanged
+        lblCash.Text = Format(txtCash.Text, "0.00")
+        lblChange.Text = Format(Val(txtCash.Text) - Val(lblTotal.Text), "0.00")
+
+    End Sub
+  
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If txtCash.Text = "" Then
+            MsgBox("Please enter the payment amount")
+        Else
+            If Val(lblChange.Text) >= 0 Then
+                con.update("reservation", "status=3", "id='" & reservation.id & "'")
+
+                con.insert("transaction", "'','" & reservation.memberId & "','" & reservation.employeeId & "','" & lblCash.Text & "','" & lblChange.Text & "','" & lblTotal.Text & "','1','" & Date.Now.ToString("yyyy-MM-dd") & "','" & reservation.getTime(DateTime.Now) & "'")
+
+
+
+                Dim receiptString As String = "Rate: " & lblRate.Text & vbNewLine
+                receiptString += "Number of Hours:" & lblHours.Text & vbNewLine
+                receiptString += "Cash Received:" & lblCash.Text & vbNewLine
+                receiptString += "Amount returned:" & lblChange.Text & vbNewLine
+
+               
+                With ListView1.Items.Add(receiptString)
+
+                End With
+
+
+                Dim PrintPreview As New PrintPreviewDialog
+                PrintPreview.Document = PrintDocument1
+                PrintPreview.ShowDialog()
+
+                MsgBox("Transaction successful!")
+                success = True
+
+            Else
+                MsgBox("Insufficient Amount Tendered")
+            End If
+            Me.Close()
+        End If
+    End Sub
+
+    Private Sub PictureBox3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles PictureBox3.Click
+        If MsgBox("Are you sure you want to exit?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub PrintDocument1_PrintPage(sender As Object, e As Printing.PrintPageEventArgs) Handles PrintDocument1.PrintPage
+        If ListView1.View = View.Details Then
+            PrintDetails(e)
+        End If
+    End Sub
+
+    Private Sub PrintDetails(ByRef e As System.Drawing.Printing.PrintPageEventArgs)
+        Static lastIndex As Integer = 0
+        Static currentPage As Integer = 0
+
+        Dim dpiGraphics As Graphics = Me.CreateGraphics
+
+        Dim xx As Integer = dpiGraphics.DpiX
+        Dim yy As Integer = dpiGraphics.DpiY
+
+        dpiGraphics.Dispose()
+
+        Dim X, Y As Integer
+
+        Dim ImageWidth As Integer
+
+        Dim textRect As Rectangle = Rectangle.Empty
+        Dim textleftpad As Single = CSng(4 * (xx / 96)) '4 pixel pad o the left
+        Dim columnHeaderHeight As Single = CSng(ListView1.Font.Height + (10 * (xx / 96))) '5 pixel pad on the top and bottom
+        Dim stringformat As Single = e.Graphics.MeasureString(CStr(currentPage), ListView1.Font).Width
+        'specify the text should be drawn in the center of the line and that the text should not be wrapped and the text should show in elipsis would cut off
+        Dim pageNumberWidth As Single = e.Graphics.MeasureString(CStr(currentPage), ListView1.Font).Width
+        Dim sf = New StringFormat
+
+        sf.FormatFlags = StringFormatFlags.NoWrap
+        sf.Trimming = StringTrimming.EllipsisCharacter
+        sf.LineAlignment = StringAlignment.Center
+
+        currentPage += 1
+
+        X = CInt(e.MarginBounds.X)
+        Y = CInt(e.MarginBounds.Y)
+
+        For columIndex As Integer = 0 To ListView1.Columns.Count - 1
+            textRect.X = X
+            textRect.Y = Y
+            textRect.Width = ListView1.Columns(columIndex).Width
+            textRect.Height = columnHeaderHeight
+
+            e.Graphics.FillRectangle(Brushes.LightGray, textRect)
+            e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+
+            textRect.X += textleftpad
+            textRect.Width -= textleftpad
+
+            e.Graphics.DrawString(ListView1.Columns(columIndex).Text, ListView1.Font, Brushes.Black, textRect, sf)
+            X += textRect.Width + textleftpad
+
+        Next
+        'just drew the headers move the y down the height of the column headers
+        Y += columnHeaderHeight
+
+        'draw the items if this is hte first page then the last index will be zero. if its not then the last index
+        'will be the last index we tried to draw but had no room
+
+        For i = lastIndex To ListView1.Items.Count - 1
+            With ListView1.Items(i)
+                'start the x at the pages left margin
+                X = CInt(e.MarginBounds.X)
+
+                If Y + .Bounds.Height > e.MarginBounds.Bottom Then
+                    'THIS ITEM WONT FIT SUBTRACT 1 FR=OM i so the next time this sub
+                    'is entered we can start with this item
+                    lastIndex = i - 1
+                    e.HasMorePages = True
+                    sf.Dispose()
+
+                    'Draw the current page number before leaving
+                    e.Graphics.DrawString(CStr(currentPage), ListView1.Font, Brushes.Black, (e.PageBounds.Width - pageNumberWidth) / 2, (e.PageBounds.Bottom - (ListView1.Font.Height * 2)))
+
+                    Exit Sub
+                    'Y += .Bounds.Height
+                End If
+                'Now draw the subitems. using the columns count so the grid lines can be drawn. If used the subitems count then the table would not be full if some subitems where less than others
+                For columnIndex As Integer = 0 To ListView1.Columns.Count - 1
+                    textRect.X = X
+                    textRect.Y = Y
+                    textRect.Width = ListView1.Columns(columnIndex).Width
+                    textRect.Height = .Bounds.Height
+
+                    If ListView1.GridLines Then
+                        e.Graphics.DrawRectangle(Pens.DarkGray, textRect)
+                    End If
+
+                    If columnIndex = 0 Then textRect.X += ImageWidth
+
+                    textRect.X += textleftpad
+                    textRect.Width -= textleftpad
+
+                    If columnIndex < .SubItems.Count Then
+                        e.Graphics.DrawString(.SubItems(columnIndex).Text, ListView1.Font, Brushes.Black, textRect, sf)
+                    End If
+
+                    X += textRect.Width + textleftpad
+                Next
+                Y += .Bounds.Height
+            End With
+        Next
+
+        e.Graphics.DrawString(CStr(currentPage), ListView1.Font, Brushes.Black, ((e.PageBounds.Width - pageNumberWidth) / 2), e.PageBounds.Bottom - ListView1.Font.Height * 2)
+
+        sf.Dispose()
+        lastIndex = 0
+        currentPage = 0
+
+
+    End Sub
+
+    Private Sub Panel1_Paint(sender As Object, e As PaintEventArgs) Handles Panel1.Paint
+
+    End Sub
+End Class
