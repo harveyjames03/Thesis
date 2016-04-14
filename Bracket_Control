@@ -1,0 +1,153 @@
+Public Class BracketControl
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Dim courts = {CheckBox1, CheckBox2, CheckBox3, CheckBox4, CheckBox5, CheckBox6}
+        Dim court = ""
+
+        For Each c In courts
+            If c.Checked = True Then
+                court = court & " " & c.Text
+            End If
+        Next
+
+        court.Trim()
+
+        con.insert("brackets", "'','" & txtName.Text & "','" & court & "', '" & cmbType.Text & "', '1'")
+        MsgBox("New Bracket has been successfully created")
+        loadBrackets()
+
+    End Sub
+
+    Private Sub BracketControl_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        
+        loadBrackets()
+
+        'autocomplete source
+        Dim users = con.read("users", "type='1'")
+        For Each u In users
+            TextBox1.AutoCompleteCustomSource.Add(u(1) & " " & u(3))
+        Next
+        checkAvail()
+
+    End Sub
+
+    Private Sub checkAvail()
+        Dim courts = {CheckBox1, CheckBox2, CheckBox3, CheckBox4, CheckBox5, CheckBox6}
+        For i As Integer = 0 To 5
+            Dim court As New Court(i + 1)
+            court.GetReservation()
+            If Not court.Vacant Then
+                Dim c As CheckBox = courts(i)
+
+                c.Enabled = False
+            End If
+        Next
+
+
+    End Sub
+
+    Private Sub loadBrackets()
+        lvMembers.Items.Clear()
+
+        Dim brackets = con.read("brackets", "status=1")
+
+        For Each bracket In brackets
+            With lvMembers.Items.Add(bracket(0))
+                .SubItems.add(bracket(1))
+                .SubItems.add(bracket(2))
+                .SubItems.add(bracket(3))
+            End With
+        Next
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        If lvMembers.SelectedIndices.Count > 0 Then
+            Dim id = lvMembers.SelectedItems(0).SubItems(0).Text
+            con.update("brackets", "status=2", "id=" & id)
+            MsgBox("This bracket has been successfully removed")
+            loadBrackets()
+
+        End If
+
+
+    End Sub
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        If lvMembers.SelectedIndices.Count > 0 Then
+            Panel2.Visible = True
+        Else
+            MsgBox("Please select a breacket first before adding players")
+        End If
+
+    End Sub
+
+    Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
+        Panel2.Visible = False
+        TextBox1.Clear()
+    End Sub
+
+    Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
+        Panel2.Visible = False
+
+
+        Dim id = lvMembers.SelectedItems(0).SubItems(0).Text
+        con.insert("bracketplayers", "'','" & id & "','" & TextBox1.Text & "','1'")
+        MsgBox("Player has been successfully added")
+
+        TextBox1.Clear()
+        loadPlayers(id)
+    End Sub
+
+    Private Sub lvMembers_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lvMembers.SelectedIndexChanged
+        If lvMembers.SelectedIndices.Count > 0 Then
+            Dim id = lvMembers.SelectedItems(0).SubItems(0).Text
+            loadPlayers(id)
+        End If
+    End Sub
+
+    Private Sub loadPlayers(id As Integer)
+        ListView1.Items.Clear()
+
+        Dim players = con.read("bracketplayers", "bracket=" & id & " AND status = 1")
+        For Each player In players
+            ListView1.Items.Add(player(2))
+        Next
+    End Sub
+
+    Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
+        If ListView1.SelectedIndices.Count > 0 Then
+            Dim name = ListView1.SelectedItems(0).SubItems(0).Text
+            con.update("bracketplayers", "status=2", "player='" & name & "'")
+            MsgBox("This player has been successfully removed")
+            Dim id = lvMembers.SelectedItems(0).SubItems(0).Text
+            loadPlayers(id)
+        End If
+    End Sub
+
+    Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
+        If lvMembers.SelectedIndices.Count > 0 Then
+            Dim frm = New Bracket
+            Dim id = lvMembers.SelectedItems(0).SubItems(0).Text
+            Dim name = lvMembers.SelectedItems(0).SubItems(1).Text
+            Dim type = lvMembers.SelectedItems(0).SubItems(3).Text
+
+            Dim players = ""
+            For Each list As ListViewItem In ListView1.Items
+                players = players & "|" & list.SubItems(0).Text
+            Next
+
+            If type = "Single Elimination" Then
+                frm.file = "index2"
+            Else
+                frm.file = "index"
+            End If
+
+            players = players.Substring(1)
+
+            frm.id = "players=" & players & "&title=" & name & "&type=" & type
+
+            frm.ShowDialog()
+        End If
+
+    End Sub
+End Class
