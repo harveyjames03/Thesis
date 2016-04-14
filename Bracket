@@ -1,0 +1,26 @@
+Imports DotNetBrowser
+Imports DotNetBrowser.WinForms
+
+Public Class Bracket
+    Public id As String
+    Public file As String
+    Dim browser As Browser
+
+    Private Sub Bracket_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
+        Dim browserView As BrowserView
+        InitializeComponent()
+
+        browser = BrowserFactory.Create()
+        browserView = New WinFormsBrowserView(browser)
+        Controls.Add(browserView)
+        browser.LoadURL(Application.StartupPath & "/bracket/" & file & ".html?" & id)
+
+        Button1.BringToFront()
+
+    End Sub
+
+    Private Sub Button1_Click(sender As System.Object, e As System.EventArgs) Handles Button1.Click
+        browser.Print()
+    End Sub
+End Class
