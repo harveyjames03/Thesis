@@ -1,0 +1,41 @@
+Public Class AddNewMemberForm
+
+    Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
+        Me.Close()
+
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        txtFname.Clear()
+        txtMname.Clear()
+        txtLname.Clear()
+        txtAddress.Clear()
+        txtAge.Clear()
+        txtEmail.Clear()
+        cmbGender.Text = ""
+        txtContact.Clear()
+
+    End Sub
+
+
+    Private Sub AddNewMemberForm_Load(sender As Object, e As EventArgs)
+
+
+    End Sub
+
+    Private Sub AddNewMemberForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles Me.FormClosed
+        'BlackScreen.Close()
+
+    End Sub
+
+    Private Sub AddNewMemberForm_Load_1(sender As Object, e As EventArgs) Handles MyBase.Load
+        'BlackScreen.Show()
+        'Me.BringToFront()
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Dim id = con.insert("users", "'','" & txtFname.Text & "','" & txtMname.Text & "','" & txtLname.Text & "','" & txtAge.Text & "','" & cmbGender.Text & "','" & txtAddress.Text & "','" & txtContact.Text & "','" & txtEmail.Text & "','1','1'")
+        Dim pointiD = con.insert("points", " '','" & id & "','0','1' ")
+        MsgBox("New member successfully saved")
+    End Sub
+End Class
