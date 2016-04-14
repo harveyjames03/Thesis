@@ -1,0 +1,45 @@
+Public Class ExtendTimeForm
+    Public success = False
+    Public reservation As Reservation
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If MsgBox("Do you want to extend the time?", vbInformation + vbYesNo, "Smash and Drop") = MsgBoxResult.Yes Then
+            reservation.hours = reservation.hours + txtHours.Value
+            reservation.endTime = reservation.endTime.AddHours(txtHours.Value)
+
+            con.update("reservation", "hour=" & reservation.hours & " AND end_time='" & reservation.getTime(reservation.endTime) & "'", "id='" & reservation.id & "'")
+            MsgBox("Time successfully extended")
+            success = True
+            Me.Close()
+        Else
+            
+            Me.Close()
+        End If
+        
+    End Sub
+
+    Private Sub ExtendTimeForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        lblCourt.Text = reservation.courtNumber
+        lblStart.Text = reservation.getTime(reservation.startTime)
+        lblPrevious.Text = reservation.getTime(reservation.endTime)
+        lblNew.Text = reservation.getTime(reservation.endTime)
+        lblHours.Text = reservation.hours
+
+    End Sub
+
+    Private Sub txtHours_ValueChanged(sender As Object, e As EventArgs) Handles txtHours.ValueChanged
+        lblHours.Text = reservation.hours + txtHours.Value
+        lblNew.Text = reservation.getTime(reservation.endTime.AddHours(txtHours.Value))
+
+    End Sub
+
+    Private Sub Button2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button2.Click
+        Me.Close()
+    End Sub
+
+    Private Sub Button3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Button3.Click
+        If MsgBox("Are you sure to logout?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+            Me.Hide()
+        End If
+    End Sub
+End Class
